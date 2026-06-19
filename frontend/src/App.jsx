@@ -17,8 +17,17 @@ export default function App() {
   const [user, setUser] = useState({ username: 'demo', displayName: 'Demo User' });
   const [team, setTeam] = useState({ name: 'Demo Team', code: 'DEMO' });
   const [needsAvatar, setNeedsAvatar] = useState(false);
-  const [requests, setRequests] = useState([]);
-  const [allRequests, setAllRequests] = useState([]);
+  const sampleRequests = [
+    { id: 1, title: 'FQA Report – Full Population Extract', status: 'in_progress', priority: 'high', assigned_to: 'demo', created_by: 'nancy', created_at: '2025-06-01', description: 'Need complete FQA audit report dataset from 2023-2025 for all HPB/SPB suppliers.', comments: [], files: [] },
+    { id: 2, title: 'Supplier Onboarding Checklist Data', status: 'open', priority: 'medium', assigned_to: 'demo', created_by: 'eric', created_at: '2025-06-05', description: 'APQP pre-qualification documentation for new vendor onboarding process.', comments: [], files: [] },
+    { id: 3, title: 'PSI Sampling Results Q1 2025', status: 'done', priority: 'high', assigned_to: 'wilson', created_by: 'demo', created_at: '2025-05-20', description: 'Pre-shipment inspection AQL sampling data from all active production lines.', comments: [], files: [] },
+    { id: 4, title: 'Lab Accreditation Certificates', status: 'open', priority: 'low', assigned_to: 'marc', created_by: 'demo', created_at: '2025-06-10', description: 'Collect ISO 17025 accreditation docs for all approved third-party labs.', comments: [], files: [] },
+    { id: 5, title: 'Regulatory Change Log – EU/UK', status: 'in_progress', priority: 'medium', assigned_to: 'marcia', created_by: 'lyes', created_at: '2025-06-08', description: 'Horizon scanning updates for regulatory changes impacting multi-geo compliance.', comments: [], files: [] },
+    { id: 6, title: 'CAPA Closure Tracking Report', status: 'blocked', priority: 'high', assigned_to: 'nancy', created_by: 'demo', created_at: '2025-06-12', description: 'Status of all open corrective actions from FQA findings – need closure evidence.', comments: [], files: [] },
+  ];
+
+  const [requests, setRequests] = useState(sampleRequests);
+  const [allRequests, setAllRequests] = useState(sampleRequests);
   const [view, setView] = useState('dashboard');
   const [selectedId, setSelectedId] = useState(null);
   const [selectedPerson, setSelectedPerson] = useState(null);
@@ -26,10 +35,14 @@ export default function App() {
   const [tab, setTab] = useState('dashboard');
 
   const loadRequests = async () => {
-    const data = await fetchRequests(statusFilter ? { status: statusFilter } : {});
-    setRequests(data);
-    if (statusFilter) { const all = await fetchRequests({}); setAllRequests(all); }
-    else setAllRequests(data);
+    try {
+      const data = await fetchRequests(statusFilter ? { status: statusFilter } : {});
+      if (data && data.length > 0) {
+        setRequests(data);
+        if (statusFilter) { const all = await fetchRequests({}); setAllRequests(all); }
+        else setAllRequests(data);
+      }
+    } catch (e) { /* use sample data if API unavailable */ }
   };
 
   useEffect(() => { if (user && team) loadRequests(); }, [statusFilter, user, team]);
