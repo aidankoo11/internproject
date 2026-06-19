@@ -134,6 +134,16 @@ body {
   position: relative;
 }
 
+.header-logo {
+  display: flex;
+  align-items: center;
+}
+
+.amazon-logo {
+  width: 120px;
+  height: 40px;
+}
+
 .header h1 {
   font-size: 24px;
   font-weight: 800;

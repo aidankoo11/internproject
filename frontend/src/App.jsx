@@ -74,7 +74,13 @@ export default function App() {
   return (
     <div className="app">
       <header className="header">
-        <h1>📊 Data Requirement Tracker</h1>
+        <div className="header-logo">
+          <svg viewBox="0 0 120 40" className="amazon-logo" xmlns="http://www.w3.org/2000/svg">
+            <text x="0" y="28" fill="#ffffff" fontFamily="'Amazon Ember', Arial, sans-serif" fontWeight="800" fontSize="28">amazon</text>
+            <path d="M15 34 Q60 44 105 34" stroke="#FF9900" strokeWidth="3" fill="none" strokeLinecap="round"/>
+            <polygon points="103,30 109,34 103,38" fill="#FF9900"/>
+          </svg>
+        </div>
         <div className="header-actions">
           <span className="team-badge">🏢 {team.name}</span>
           <span className="current-user" onClick={handleLogout} title="Logout">👤 {user.displayName}</span>
