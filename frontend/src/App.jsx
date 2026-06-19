@@ -14,8 +14,8 @@ import SearchBar from './components/SearchBar';
 import ActivityFeed from './components/ActivityFeed';
 
 export default function App() {
-  const [user, setUser] = useState({ username: 'demo', displayName: 'Demo User' });
-  const [team, setTeam] = useState({ name: 'Demo Team', code: 'DEMO' });
+  const [user, setUser] = useState(() => { const s = localStorage.getItem('tracker_session'); return s ? JSON.parse(s).user : null; });
+  const [team, setTeam] = useState(() => { const s = localStorage.getItem('tracker_session'); return s ? JSON.parse(s).team : null; });
   const [needsAvatar, setNeedsAvatar] = useState(false);
   const sampleRequests = [
     { id: 1, title: 'FQA Report – Full Population Extract', status: 'in_progress', priority: 'high', assigned_to: 'demo', created_by: 'nancy', created_at: '2025-06-01', description: 'Need complete FQA audit report dataset from 2023-2025 for all HPB/SPB suppliers.', comments: [], files: [] },
@@ -55,9 +55,9 @@ export default function App() {
   const handleViewPerson = (name) => { setSelectedPerson(name); setView('person'); };
   const handleBack = () => { setView('dashboard'); setSelectedId(null); setSelectedPerson(null); loadRequests(); };
 
-  if (!user) return null;
+  if (!user) return <AuthScreen onLogin={handleLogin} />;
   if (needsAvatar) return <AvatarSetup user={user} onComplete={handleAvatarComplete} />;
-  if (!team) return null;
+  if (!team) return <TeamScreen user={user} onTeamJoined={handleTeamJoined} />;
 
   return (
     <div className="app">
