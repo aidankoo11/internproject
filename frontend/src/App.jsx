@@ -75,10 +75,10 @@ export default function App() {
     <div className="app">
       <header className="header">
         <div className="header-logo">
-          <svg viewBox="0 0 120 40" className="amazon-logo" xmlns="http://www.w3.org/2000/svg">
-            <text x="0" y="28" fill="#ffffff" fontFamily="'Amazon Ember', Arial, sans-serif" fontWeight="800" fontSize="28">amazon</text>
-            <path d="M15 34 Q60 44 105 34" stroke="#FF9900" strokeWidth="3" fill="none" strokeLinecap="round"/>
-            <polygon points="103,30 109,34 103,38" fill="#FF9900"/>
+          <svg viewBox="0 0 160 50" className="amazon-logo" xmlns="http://www.w3.org/2000/svg">
+            <text x="5" y="32" fill="#232f3e" fontFamily="'Amazon Ember', Arial, sans-serif" fontWeight="700" fontSize="32" letterSpacing="-1">amazon</text>
+            <path d="M25 40 Q80 52 140 40" stroke="#FF9900" strokeWidth="3.5" fill="none" strokeLinecap="round"/>
+            <polygon points="137,36 145,40.5 137,45" fill="#FF9900"/>
           </svg>
         </div>
         <div className="header-actions">
