@@ -1,6 +1,17 @@
 import React from 'react';
 
 export default function PeopleTracker({ requests, onViewPerson }) {
+  // Avatar map using DiceBear API for generated profile pics
+  const avatars = {
+    'Aidan Koo': 'https://api.dicebear.com/7.x/avataaars/svg?seed=Aidan',
+    'Nancy Chen': 'https://api.dicebear.com/7.x/avataaars/svg?seed=Nancy',
+    'Eric Cheng': 'https://api.dicebear.com/7.x/avataaars/svg?seed=Eric',
+    'Wilson Park': 'https://api.dicebear.com/7.x/avataaars/svg?seed=Wilson',
+    'Marc Ethers': 'https://api.dicebear.com/7.x/avataaars/svg?seed=Marc',
+    'Marcia Santos': 'https://api.dicebear.com/7.x/avataaars/svg?seed=Marcia',
+    'Lyes Amrani': 'https://api.dicebear.com/7.x/avataaars/svg?seed=Lyes',
+  };
+
   // Group requests by assignee
   const people = {};
   requests.forEach((req) => {
@@ -34,6 +45,7 @@ export default function PeopleTracker({ requests, onViewPerson }) {
           return (
             <div key={name} className="person-card" onClick={() => onViewPerson(name)}>
               <div className="person-header">
+                {avatars[name] && <img src={avatars[name]} alt={name} className="person-avatar" />}
                 <span className="person-name">{name}</span>
                 <span className="person-pct">{completionPct}%</span>
               </div>

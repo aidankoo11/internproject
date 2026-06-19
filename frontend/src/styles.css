@@ -657,7 +657,15 @@ body {
   margin-bottom: 10px;
 }
 
-.person-name { font-weight: 700; font-size: 14px; }
+.person-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  margin-right: 8px;
+  border: 2px solid #e9ebed;
+}
+
+.person-name { font-weight: 700; font-size: 14px; flex: 1; }
 .person-pct { font-size: 13px; font-weight: 700; color: #037f0c; }
 
 .person-bar {
