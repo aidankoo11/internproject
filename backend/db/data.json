@@ -1,0 +1,367 @@
+{
+  "users": [
+    {
+      "id": 1,
+      "username": "aidankoo",
+      "displayName": "aidankoo",
+      "avatarUrl": null,
+      "passwordHash": "9a6e76aac900cd8d27ecd8186eb9fff5cf3eb5da6d9bde70aae9ceec32637fb3",
+      "teamId": 1,
+      "role": "admin",
+      "createdAt": "2026-06-15T18:39:12.444Z"
+    }
+  ],
+  "teams": [
+    {
+      "id": 1,
+      "name": "PBC Team",
+      "code": "E2D29C",
+      "ownerId": 1,
+      "createdAt": "2026-06-15T18:39:24.756Z"
+    }
+  ],
+  "nextUserId": 2,
+  "nextTeamId": 2,
+  "groups": [
+    {
+      "id": 1,
+      "name": "SOX Control 1.1 - Revenue Recognition",
+      "description": "Verify revenue is recorded in the correct period",
+      "created_at": "2025-05-20T10:00:00.000Z"
+    },
+    {
+      "id": 2,
+      "name": "SOX Control 2.3 - Access Management",
+      "description": "Validate user access reviews are performed quarterly",
+      "created_at": "2025-05-22T10:00:00.000Z"
+    },
+    {
+      "id": 3,
+      "name": "Data Integrity Check - Payments",
+      "description": "Reconcile payment records across systems",
+      "created_at": "2025-05-25T10:00:00.000Z"
+    }
+  ],
+  "requests": [
+    {
+      "id": 1,
+      "title": "Pull monthly revenue cutoff samples",
+      "description": "Select 25 samples from month-end revenue transactions for cutoff testing",
+      "requester": "pm_lead",
+      "assignee": "aidankoo",
+      "status": "urgent",
+      "target_date": "2025-06-01",
+      "group_id": 1,
+      "workpaper_ref": null,
+      "tags": [],
+      "created_at": "2025-05-28T10:00:00.000Z",
+      "updated_at": "2026-06-19T14:35:00.122Z"
+    },
+    {
+      "id": 2,
+      "title": "Verify deferred revenue schedule accuracy",
+      "description": "Compare deferred revenue rollforward to GL entries",
+      "requester": "intern01",
+      "assignee": "aidankoo",
+      "status": "in_progress",
+      "target_date": "2025-06-15",
+      "group_id": 1,
+      "workpaper_ref": "WP-001",
+      "tags": [],
+      "created_at": "2025-06-02T09:00:00.000Z",
+      "updated_at": "2025-06-03T11:00:00.000Z"
+    },
+    {
+      "id": 3,
+      "title": "Confirm revenue recognition policy compliance",
+      "description": "Review policy documentation and compare to actual booking practices",
+      "requester": "pm_lead",
+      "assignee": "dataeng",
+      "status": "done",
+      "target_date": "2025-05-30",
+      "group_id": 1,
+      "workpaper_ref": null,
+      "tags": [],
+      "created_at": "2025-05-22T08:00:00.000Z",
+      "updated_at": "2026-06-19T14:34:57.377Z"
+    },
+    {
+      "id": 4,
+      "title": "Extract user access list from IAM",
+      "description": "Pull current user permissions for all production systems",
+      "requester": "aidankoo",
+      "assignee": "dataeng",
+      "status": "urgent",
+      "target_date": "2025-06-05",
+      "group_id": 2,
+      "workpaper_ref": null,
+      "tags": [
+        "Blocked"
+      ],
+      "created_at": "2025-06-03T15:00:00.000Z",
+      "updated_at": "2026-06-12T13:40:52.386Z"
+    },
+    {
+      "id": 5,
+      "title": "Verify quarterly access review completion",
+      "description": "Confirm all managers have signed off on Q1 access reviews",
+      "requester": "ops_mgr",
+      "assignee": "aidankoo",
+      "status": "done",
+      "target_date": "2025-06-10",
+      "group_id": 2,
+      "workpaper_ref": null,
+      "tags": [],
+      "created_at": "2025-06-01T10:00:00.000Z",
+      "updated_at": "2026-06-19T14:34:58.758Z"
+    },
+    {
+      "id": 6,
+      "title": "Check terminated user access removal",
+      "description": "Validate terminated employees had access removed within 24 hours",
+      "requester": "aidankoo",
+      "assignee": "intern01",
+      "status": "done",
+      "target_date": "2025-06-12",
+      "group_id": 2,
+      "workpaper_ref": null,
+      "tags": [
+        "Waiting on PBC"
+      ],
+      "created_at": "2025-06-04T09:00:00.000Z",
+      "updated_at": "2026-06-17T17:52:17.136Z"
+    },
+    {
+      "id": 7,
+      "title": "Reconcile payment gateway totals to ledger",
+      "description": "Match daily payment gateway summaries to GL postings for May",
+      "requester": "pm_lead",
+      "assignee": "intern01",
+      "status": "done",
+      "target_date": "2025-06-02",
+      "group_id": 3,
+      "workpaper_ref": "WP-003",
+      "tags": [
+        "Escalated"
+      ],
+      "created_at": "2025-05-30T10:00:00.000Z",
+      "updated_at": "2026-06-15T18:40:26.059Z"
+    },
+    {
+      "id": 8,
+      "title": "Validate refund processing completeness",
+      "description": "Ensure all refunds processed in the system are reflected in the ledger",
+      "requester": "ops_mgr",
+      "assignee": "dataeng",
+      "status": "done",
+      "target_date": "2025-05-28",
+      "group_id": 3,
+      "workpaper_ref": null,
+      "tags": [],
+      "created_at": "2025-05-20T10:00:00.000Z",
+      "updated_at": "2025-05-28T16:00:00.000Z"
+    },
+    {
+      "id": 9,
+      "title": "Cross-check payment method distribution",
+      "description": "Compare payment method breakdown between gateway and internal records",
+      "requester": "aidankoo",
+      "assignee": "aidankoo",
+      "status": "in_progress",
+      "target_date": null,
+      "group_id": 3,
+      "workpaper_ref": null,
+      "tags": [],
+      "created_at": "2025-06-04T12:00:00.000Z",
+      "updated_at": "2026-06-12T13:41:00.937Z"
+    }
+  ],
+  "comments": [
+    {
+      "id": 1,
+      "request_id": 1,
+      "author": "aidankoo",
+      "content": "Working on the query, marketplace dimension is tricky",
+      "created_at": "2025-06-02T16:00:00.000Z"
+    },
+    {
+      "id": 2,
+      "request_id": 2,
+      "author": "aidankoo",
+      "content": "Started pulling the data from Redshift, segmentation logic is complex",
+      "created_at": "2025-06-03T11:00:00.000Z"
+    },
+    {
+      "id": 3,
+      "request_id": 2,
+      "author": "aidankoo",
+      "content": "Nice",
+      "created_at": "2026-06-12T13:33:49.167Z"
+    },
+    {
+      "id": 4,
+      "request_id": 1,
+      "author": "aidankoo",
+      "content": "Very unresponsive POC\n",
+      "created_at": "2026-06-15T18:40:16.949Z"
+    }
+  ],
+  "files": [
+    {
+      "id": 1,
+      "request_id": 2,
+      "filename": "1781271218340-317480615.pdf",
+      "original_name": "FQA Report_LANDIS TEXTILES_20250519 (2).pdf",
+      "mimetype": "application/pdf",
+      "size": 954976,
+      "uploaded_by": "unknown",
+      "uploaded_at": "2026-06-12T13:33:38.360Z"
+    }
+  ],
+  "activities": [
+    {
+      "id": 1781879700122,
+      "type": "status_changed",
+      "request_id": 1,
+      "request_title": "Pull monthly revenue cutoff samples",
+      "user": "someone",
+      "old_status": "in_progress",
+      "new_status": "urgent",
+      "timestamp": "2026-06-19T14:35:00.122Z"
+    },
+    {
+      "id": 1781879698758,
+      "type": "status_changed",
+      "request_id": 5,
+      "request_title": "Verify quarterly access review completion",
+      "user": "someone",
+      "old_status": "urgent",
+      "new_status": "done",
+      "timestamp": "2026-06-19T14:34:58.758Z"
+    },
+    {
+      "id": 1781879697377,
+      "type": "status_changed",
+      "request_id": 3,
+      "request_title": "Confirm revenue recognition policy compliance",
+      "user": "someone",
+      "old_status": "in_progress",
+      "new_status": "done",
+      "timestamp": "2026-06-19T14:34:57.377Z"
+    },
+    {
+      "id": 1781718742997,
+      "type": "status_changed",
+      "request_id": 3,
+      "request_title": "Confirm revenue recognition policy compliance",
+      "user": "someone",
+      "old_status": "todo",
+      "new_status": "in_progress",
+      "timestamp": "2026-06-17T17:52:22.997Z"
+    },
+    {
+      "id": 1781718739277,
+      "type": "status_changed",
+      "request_id": 1,
+      "request_title": "Pull monthly revenue cutoff samples",
+      "user": "someone",
+      "old_status": "todo",
+      "new_status": "in_progress",
+      "timestamp": "2026-06-17T17:52:19.277Z"
+    },
+    {
+      "id": 1781718737136,
+      "type": "status_changed",
+      "request_id": 6,
+      "request_title": "Check terminated user access removal",
+      "user": "someone",
+      "old_status": "todo",
+      "new_status": "done",
+      "timestamp": "2026-06-17T17:52:17.136Z"
+    },
+    {
+      "id": 1781718730177,
+      "type": "status_changed",
+      "request_id": 3,
+      "request_title": "Confirm revenue recognition policy compliance",
+      "user": "someone",
+      "old_status": "done",
+      "new_status": "todo",
+      "timestamp": "2026-06-17T17:52:10.177Z"
+    },
+    {
+      "id": 1781718726537,
+      "type": "status_changed",
+      "request_id": 1,
+      "request_title": "Pull monthly revenue cutoff samples",
+      "user": "someone",
+      "old_status": "done",
+      "new_status": "todo",
+      "timestamp": "2026-06-17T17:52:06.537Z"
+    },
+    {
+      "id": 1781710414603,
+      "type": "status_changed",
+      "request_id": 5,
+      "request_title": "Verify quarterly access review completion",
+      "user": "someone",
+      "old_status": "in_progress",
+      "new_status": "urgent",
+      "timestamp": "2026-06-17T15:33:34.603Z"
+    },
+    {
+      "id": 1781710405755,
+      "type": "status_changed",
+      "request_id": 1,
+      "request_title": "Pull monthly revenue cutoff samples",
+      "user": "someone",
+      "old_status": "urgent",
+      "new_status": "done",
+      "timestamp": "2026-06-17T15:33:25.755Z"
+    },
+    {
+      "id": 1781548826059,
+      "type": "status_changed",
+      "request_id": 7,
+      "request_title": "Reconcile payment gateway totals to ledger",
+      "user": "someone",
+      "old_status": "urgent",
+      "new_status": "done",
+      "timestamp": "2026-06-15T18:40:26.059Z"
+    },
+    {
+      "id": 1781271660937,
+      "type": "status_changed",
+      "request_id": 9,
+      "request_title": "Cross-check payment method distribution",
+      "user": "someone",
+      "old_status": "todo",
+      "new_status": "in_progress",
+      "timestamp": "2026-06-12T13:41:00.937Z"
+    },
+    {
+      "id": 1781271654953,
+      "type": "status_changed",
+      "request_id": 5,
+      "request_title": "Verify quarterly access review completion",
+      "user": "someone",
+      "old_status": "todo",
+      "new_status": "in_progress",
+      "timestamp": "2026-06-12T13:40:54.953Z"
+    },
+    {
+      "id": 1781271652387,
+      "type": "status_changed",
+      "request_id": 4,
+      "request_title": "Extract user access list from IAM",
+      "user": "someone",
+      "old_status": "in_progress",
+      "new_status": "urgent",
+      "timestamp": "2026-06-12T13:40:52.387Z"
+    }
+  ],
+  "nextGroupId": 4,
+  "nextRequestId": 10,
+  "nextCommentId": 5,
+  "nextFileId": 2
+}
