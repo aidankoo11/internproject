@@ -14,8 +14,8 @@ import SearchBar from './components/SearchBar';
 import ActivityFeed from './components/ActivityFeed';
 
 export default function App() {
-  const [user, setUser] = useState(() => { const s = localStorage.getItem('tracker_session'); return s ? JSON.parse(s).user : null; });
-  const [team, setTeam] = useState(() => { const s = localStorage.getItem('tracker_session'); return s ? JSON.parse(s).team : null; });
+  const [user, setUser] = useState({ username: 'demo', displayName: 'Demo User' });
+  const [team, setTeam] = useState({ name: 'Demo Team', code: 'DEMO' });
   const [needsAvatar, setNeedsAvatar] = useState(false);
   const [requests, setRequests] = useState([]);
   const [allRequests, setAllRequests] = useState([]);
@@ -42,9 +42,9 @@ export default function App() {
   const handleViewPerson = (name) => { setSelectedPerson(name); setView('person'); };
   const handleBack = () => { setView('dashboard'); setSelectedId(null); setSelectedPerson(null); loadRequests(); };
 
-  if (!user) return <AuthScreen onLogin={handleLogin} />;
+  if (!user) return null;
   if (needsAvatar) return <AvatarSetup user={user} onComplete={handleAvatarComplete} />;
-  if (!team) return <TeamScreen user={user} onTeamJoined={handleTeamJoined} />;
+  if (!team) return null;
 
   return (
     <div className="app">
