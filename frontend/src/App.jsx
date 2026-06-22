@@ -93,7 +93,7 @@ export default function App() {
       {view === 'dashboard' && (
         <div className="tabs">
           <button className={`tab ${tab === 'dashboard' ? 'tab-active' : ''}`} onClick={() => setTab('dashboard')}>📋 Dashboard</button>
-          <button className={`tab ${tab === 'team' ? 'tab-active' : ''}`} onClick={() => setTab('team')}>� Team</button>
+          <button className={`tab ${tab === 'team' ? 'tab-active' : ''}`} onClick={() => setTab('team')}>👥 Team</button>
         </div>
       )}
 
