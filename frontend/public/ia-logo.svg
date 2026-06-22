@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 85">
+  <!-- i: dot -->
+  <ellipse cx="30" cy="9" rx="6.5" ry="6.5" fill="#000000"/>
+  <!-- i: stem -->
+  <rect x="23" y="21" width="14" height="32" rx="2" fill="#000000"/>
+  <!-- a: using bold text -->
+  <text x="40" y="54" font-family="Arial Black, sans-serif" font-weight="900" font-size="44" fill="#000000">a</text>
+  <!-- Amazon smile arrow -->
+  <path d="M4 64 C18 78, 55 82, 88 68" stroke="#E8590C" stroke-width="6" fill="none" stroke-linecap="round"/>
+  <path d="M82 60 L92 68 L80 73" fill="#E8590C"/>
+</svg>
