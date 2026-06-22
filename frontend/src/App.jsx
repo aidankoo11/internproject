@@ -75,7 +75,7 @@ export default function App() {
     <div className="app">
       <header className="header">
         <div className="header-logo">
-          <img src={`${import.meta.env.BASE_URL}ia-logo.svg`} alt="Internal Audit" className="amazon-logo" />
+          <img src={`${import.meta.env.BASE_URL}getsitelogo.png`} alt="Internal Audit" className="amazon-logo" />
         </div>
         <div className="header-actions">
           <span className="team-badge">🏢 {team.name}</span>
