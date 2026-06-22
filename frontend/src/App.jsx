@@ -93,8 +93,7 @@ export default function App() {
       {view === 'dashboard' && (
         <div className="tabs">
           <button className={`tab ${tab === 'dashboard' ? 'tab-active' : ''}`} onClick={() => setTab('dashboard')}>📋 Dashboard</button>
-          <button className={`tab ${tab === 'controls' ? 'tab-active' : ''}`} onClick={() => setTab('controls')}>🗂️ Controls</button>
-          <button className={`tab ${tab === 'team' ? 'tab-active' : ''}`} onClick={() => setTab('team')}>👥 Team</button>
+          <button className={`tab ${tab === 'team' ? 'tab-active' : ''}`} onClick={() => setTab('team')}>� Team</button>
         </div>
       )}
 
@@ -111,7 +110,6 @@ export default function App() {
             </div>
           </div>
         )}
-        {view === 'dashboard' && tab === 'controls' && <ControlsView onViewDetail={handleViewDetail} />}
         {view === 'dashboard' && tab === 'team' && (
           <div className="team-panel">
             <div className="team-info-card">
