@@ -5,7 +5,7 @@ export default function MyTasks({ requests, currentUser }) {
   today.setHours(0, 0, 0, 0);
 
   const myRequests = requests.filter(
-    (r) => r.assignee === currentUser && r.status !== 'done'
+    (r) => (r.assignee === currentUser || r.assigned_to === currentUser) && r.status !== 'done'
   );
 
   const overdue = myRequests.filter(
