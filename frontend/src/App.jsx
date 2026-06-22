@@ -120,6 +120,7 @@ export default function App() {
               <h3>🏢 {team.name}</h3>
               <div className="team-code-section"><span className="team-code-label">Invite Code:</span><span className="team-code-value">{team.code}</span></div>
               <p className="muted">Share this code with teammates so they can join.</p>
+              <a href="https://amazon.sharepoint.com/sites/internal-audit/WWAS%20Library/Forms/AllItems.aspx?e=5%3A38803bcfe93e4c7ba2ca22bbb39c8c92&sharingv2=true&fromShare=true&at=9&CT=1779240908620&OR=OWA%2DNT%2DMail&CID=f4ccbdf3%2Dcadc%2D2a99%2Dc467%2De2a527b29630&FolderCTID=0x01200042C5DB005FAB984BAF2DE95F1F00A412&id=%2Fsites%2Finternal%2Daudit%2FWWAS%20Library%2FProject%20Files%2F5001647%20%E2%80%93%20Private%20Brands%20%2D%20Global%20Sourcing%20%28WW%29" target="_blank" rel="noopener noreferrer" className="btn btn-secondary sharepoint-link">📁 Open SharePoint Folder</a>
             </div>
             <ControlChecklist />
             <PocSection />

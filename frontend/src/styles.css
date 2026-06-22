@@ -1032,6 +1032,12 @@ body {
   padding: 24px;
 }
 
+.sharepoint-link {
+  display: inline-block;
+  margin-top: 12px;
+  text-decoration: none;
+}
+
 .team-info-card h3 {
   font-size: 18px;
   font-weight: 800;
