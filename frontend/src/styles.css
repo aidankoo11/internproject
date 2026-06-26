@@ -2053,3 +2053,88 @@ body {
   color: #8d99a8;
   text-align: center;
 }
+
+/* Risk Digest - Ask Kiro box */
+.ask-box {
+  background: linear-gradient(135deg, #f0f4ff 0%, #faf5ff 100%);
+  border: 1px solid #e0e7ff;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 20px;
+}
+
+.ask-form {
+  display: flex;
+  gap: 8px;
+}
+
+.ask-input {
+  flex: 1;
+  padding: 10px 14px;
+  border: 1px solid #d5dbdb;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.ask-input:focus { outline: none; border-color: #7c3aed; }
+
+.ask-btn { white-space: nowrap; }
+
+.ask-suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.ask-chip {
+  font-size: 12px;
+  font-weight: 600;
+  color: #5b21b6;
+  background: white;
+  border: 1px solid #ddd6fe;
+  border-radius: 14px;
+  padding: 4px 12px;
+  cursor: pointer;
+}
+.ask-chip:hover { background: #f5f3ff; border-color: #c4b5fd; }
+
+.ask-response {
+  background: white;
+  border: 1px solid #e9ebed;
+  border-radius: 10px;
+  padding: 16px;
+  margin-top: 14px;
+}
+
+.ask-thinking {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #5f6b7a;
+  font-size: 14px;
+}
+
+.ask-spinner {
+  display: inline-block;
+  animation: spin 1s linear infinite;
+}
+@keyframes spin { from { transform: rotate(0); } to { transform: rotate(360deg); } }
+
+.ask-response-head { font-weight: 800; font-size: 14px; margin-bottom: 8px; }
+.ask-headline { font-weight: 700; font-size: 14px; margin-bottom: 10px; }
+
+.ask-points { margin: 0 0 12px 18px; display: flex; flex-direction: column; gap: 6px; }
+.ask-points li { font-size: 13px; line-height: 1.5; }
+
+.ask-reco {
+  font-size: 13px;
+  font-weight: 600;
+  background: #f0fdf4;
+  border-left: 3px solid #037f0c;
+  padding: 8px 12px;
+  border-radius: 6px;
+  margin-bottom: 10px;
+}
+
+.ask-disclaimer { font-size: 11px; color: #8d99a8; font-style: italic; }
