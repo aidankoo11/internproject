@@ -71,14 +71,64 @@ function coveragePct(evidence) {
   return Math.round((score / evidence.length) * 100);
 }
 
-export default function RiskDigest() {
+export default function RiskDigest({ onGenerateRequests, existingRequests = [], onGoToDashboard }) {
   const [reportId, setReportId] = useState(SAMPLE_REPORTS[0].id);
   const [expanded, setExpanded] = useState(null);
   const [prompt, setPrompt] = useState('');
   const [response, setResponse] = useState(null);
   const [thinking, setThinking] = useState(false);
+  const [generatedLabels, setGeneratedLabels] = useState([]);
+  const [toast, setToast] = useState('');
 
   const report = SAMPLE_REPORTS.find((r) => r.id === reportId);
+
+  const priorityForSeverity = (sev) => (sev === 'High' ? 'high' : sev === 'Medium' ? 'medium' : 'low');
+
+  // Turn a risk's not-yet-collected evidence into draft data requests, tagged to the risk
+  const generateForRisk = (risk) => {
+    const items = risk.evidence.filter((e) => e.status !== 'collected' && !generatedLabels.includes(e.id));
+    if (items.length === 0) {
+      setToast('All evidence for this risk is already collected or already generated.');
+      return;
+    }
+    const toCreate = items.map((e) => ({
+      title: e.label,
+      status: 'open',
+      priority: priorityForSeverity(risk.severity),
+      assignee: 'Unassigned',
+      assigned_to: '',
+      description: `Auto-generated from risk "${risk.title}" (${report.name}, ${report.code}). Source: ${e.source}. Needed to evidence this ${risk.severity.toLowerCase()}-severity risk.`,
+      risk_tag: risk.title,
+      source: e.source,
+    }));
+    onGenerateRequests?.(toCreate);
+    setGeneratedLabels((prev) => [...prev, ...items.map((e) => e.id)]);
+    setToast(`Created ${toCreate.length} data request${toCreate.length === 1 ? '' : 's'} from "${risk.title}".`);
+  };
+
+  // Generate requests for every missing/partial item across all risks
+  const generateAll = () => {
+    const items = [];
+    report.risks.forEach((risk) => {
+      risk.evidence
+        .filter((e) => e.status !== 'collected' && !generatedLabels.includes(e.id))
+        .forEach((e) => items.push({
+          title: e.label,
+          status: 'open',
+          priority: priorityForSeverity(risk.severity),
+          assignee: 'Unassigned',
+          assigned_to: '',
+          description: `Auto-generated from risk "${risk.title}" (${report.name}, ${report.code}). Source: ${e.source}.`,
+          risk_tag: risk.title,
+          source: e.source,
+          _eid: e.id,
+        }));
+    });
+    if (items.length === 0) { setToast('Nothing left to generate — all gaps already have requests.'); return; }
+    onGenerateRequests?.(items.map(({ _eid, ...rest }) => rest));
+    setGeneratedLabels((prev) => [...prev, ...items.map((i) => i._eid)]);
+    setToast(`Created ${items.length} data requests across the report. Check the Dashboard.`);
+  };
 
   // Overall coverage across all risks
   const allEvidence = report.risks.flatMap((r) => r.evidence);
@@ -193,7 +243,19 @@ export default function RiskDigest() {
           <span className="stat stat-active">🟠 {partialCount} partial</span>
           <span className="stat stat-done">🟢 {allEvidence.length - missingCount - partialCount} collected</span>
         </div>
+        <div className="risk-generate-bar">
+          <button className="btn btn-primary btn-sm" onClick={generateAll}>⚡ Auto-generate data requests for all gaps</button>
+          <span className="risk-generate-hint">Turns every missing / partial item into a tracked request, tagged to its risk.</span>
+        </div>
       </div>
+
+      {toast && (
+        <div className="risk-toast">
+          <span>✅ {toast}</span>
+          {onGoToDashboard && <button className="risk-toast-link" onClick={onGoToDashboard}>Go to Dashboard →</button>}
+          <button className="risk-toast-close" onClick={() => setToast('')}>✕</button>
+        </div>
+      )}
 
       <div className="risk-list">
         {report.risks.map((risk) => {
@@ -214,10 +276,14 @@ export default function RiskDigest() {
               {isOpen && (
                 <div className="risk-card-body">
                   <p className="risk-scenario">{risk.scenario}</p>
-                  <h5>Required Evidence</h5>
+                  <div className="risk-evidence-head">
+                    <h5>Required Evidence</h5>
+                    <button className="btn btn-secondary btn-sm" onClick={(e) => { e.stopPropagation(); generateForRisk(risk); }}>⚡ Generate requests for gaps</button>
+                  </div>
                   <div className="evidence-list">
                     {risk.evidence.map((e) => {
                       const meta = STATUS_META[e.status];
+                      const isGen = generatedLabels.includes(e.id);
                       return (
                         <div key={e.id} className="evidence-item" style={{ borderLeftColor: meta.color }}>
                           <span className="evidence-status">{meta.emoji}</span>
@@ -225,6 +291,7 @@ export default function RiskDigest() {
                             <span className="evidence-label">{e.label}</span>
                             <span className="evidence-source">{e.source}{e.note ? ` — ${e.note}` : ''}</span>
                           </div>
+                          {isGen && <span className="evidence-gen-badge">📋 request created</span>}
                           <span className="evidence-badge" style={{ color: meta.color, borderColor: meta.color }}>{meta.label}</span>
                         </div>
                       );

@@ -71,6 +71,23 @@ export default function App() {
   const handleViewPerson = (name) => { setSelectedPerson(name); setView('person'); };
   const handleBack = () => { setView('dashboard'); setSelectedId(null); setSelectedPerson(null); loadRequests(); };
 
+  // Add auto-generated data requests (from Risk Digest) into the tracker
+  const handleGenerateRequests = (newRequests) => {
+    const maxId = allRequests.reduce((m, r) => Math.max(m, r.id), 0);
+    const stamped = newRequests.map((r, i) => ({
+      ...r,
+      id: maxId + i + 1,
+      created_by: user.username,
+      created_at: new Date().toISOString().slice(0, 10),
+      comments: [],
+      files: [],
+    }));
+    const updated = [...stamped, ...allRequests];
+    setAllRequests(updated);
+    setRequests(updated);
+    return stamped;
+  };
+
   if (!user) return <AuthScreen onLogin={handleLogin} />;
   if (needsAvatar) return <AvatarSetup user={user} onComplete={handleAvatarComplete} />;
   if (!team) return <TeamScreen user={user} onTeamJoined={handleTeamJoined} />;
@@ -112,7 +129,7 @@ export default function App() {
             </div>
           </div>
         )}
-        {view === 'dashboard' && tab === 'risk' && <RiskDigest />}
+        {view === 'dashboard' && tab === 'risk' && <RiskDigest onGenerateRequests={handleGenerateRequests} existingRequests={allRequests} onGoToDashboard={() => setTab('dashboard')} />}
         {view === 'dashboard' && tab === 'team' && (
           <div className="team-panel">
             <div className="team-info-card">
