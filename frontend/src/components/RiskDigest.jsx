@@ -1,191 +1,193 @@
 import React, { useState } from 'react';
 
-// Sample data modeled on IA Researcher output: a report -> risk scenarios ->
-// the specific evidence each risk requires, with what's been collected.
-// In production this is populated from the researcher MCP (get_risk_scenarios, get_coes, etc.)
-const SAMPLE_REPORTS = [
+// Sample RCM (Risk Control Matrix): controls -> test steps.
+// Each test step carries the "how to complete it" breakdown that becomes the
+// generated to-do. In production this maps to an imported/linked RCM.
+const SAMPLE_RCMS = [
   {
-    id: 'r1',
+    id: 'rcm1',
     name: 'Private Brands – Global Sourcing (WW)',
     code: '5001647',
-    vp: 'Adam Baker',
-    risks: [
+    controls: [
       {
-        id: 'risk1',
-        title: 'Supplier onboarded without completed FQA',
-        scenario: 'A supplier begins production before a Factory Quality Audit is performed, exposing customers to unverified manufacturing quality.',
-        severity: 'High',
-        evidence: [
-          { id: 'e1', label: 'Full population of FQA reports (2023–2025)', status: 'collected', source: 'SharePoint / QA team', note: 'Received 312 reports' },
-          { id: 'e2', label: 'Production launch dates per supplier', status: 'collected', source: 'PBC Stage 3 export' },
-          { id: 'e3', label: 'Supplier onboarding date log', status: 'partial', source: 'Vendor Mgmt', note: '4 of 9 packages received' },
-          { id: 'e4', label: 'Approved auditor list with qualification dates', status: 'missing', source: 'QA team' },
+        id: 'c1',
+        name: 'Control 1',
+        title: 'Factory Quality Audit (FQA) Program',
+        risk: 'Suppliers begin production without a completed FQA, exposing customers to unverified quality.',
+        testSteps: [
+          {
+            id: '1.1',
+            label: 'Obtain full population of FQA reports (2023–2025)',
+            priority: 'high',
+            howTo: [
+              'Request the complete FQA report population from the QA team for 2023–2025.',
+              'Confirm completeness against the supplier master list.',
+              'Log the total count received and note any suppliers with no report.',
+            ],
+          },
+          {
+            id: '1.2',
+            label: 'Compare FQA dates to production launch dates',
+            priority: 'high',
+            howTo: [
+              'Pull production launch dates per supplier from PBC Stage 3.',
+              'Match each FQA date against its supplier’s launch date.',
+              'Flag any supplier whose FQA occurred after production launch.',
+            ],
+          },
+          {
+            id: '1.4',
+            label: 'Cross-reference auditors against the approved list',
+            priority: 'medium',
+            howTo: [
+              'Obtain the current approved FQA auditor list with qualification dates.',
+              'Match auditors who signed each FQA against that list.',
+              'Flag any FQA performed by an unapproved or lapsed auditor.',
+            ],
+          },
         ],
       },
       {
-        id: 'risk2',
-        title: 'Testing performed by non-independent / unaccredited lab',
-        scenario: 'Product testing is submitted to a lab that lacks accreditation scope or has a structural conflict of interest, undermining test validity.',
-        severity: 'High',
-        evidence: [
-          { id: 'e5', label: 'Approved lab list with accreditation scope', status: 'collected', source: 'APQP' },
-          { id: 'e6', label: 'ISO 17025 certificates per lab', status: 'partial', source: 'Lab Mgmt', note: '11 of 18 received' },
-          { id: 'e7', label: 'Lab audit frequency & coverage records', status: 'missing', source: 'Lab Oversight' },
+        id: 'c2',
+        name: 'Control 2',
+        title: 'Supplier Pre-Qualification & Vendor Selection',
+        risk: 'Suppliers are onboarded without complete due diligence or a MAP gate review.',
+        testSteps: [
+          {
+            id: '2.1',
+            label: 'Identify suppliers without a MAP gate review',
+            priority: 'high',
+            howTo: [
+              'Obtain the onboarding population and the MAP gate review log.',
+              'Match each onboarded supplier to its MAP gate record.',
+              'List suppliers missing a completed gate review.',
+            ],
+          },
+          {
+            id: '2.2',
+            label: 'Confirm financial statements are ≤12 months old',
+            priority: 'medium',
+            howTo: [
+              'Collect the latest financial statement date for each supplier.',
+              'Compare each against the onboarding/review date.',
+              'Flag suppliers whose statements are older than 12 months.',
+            ],
+          },
         ],
       },
       {
-        id: 'risk3',
-        title: 'Expired supplier financial statements',
-        scenario: 'Supplier financial viability is assessed using statements older than 12 months, risking continuity of supply.',
-        severity: 'Medium',
-        evidence: [
-          { id: 'e8', label: 'Supplier financial statements (≤12 months)', status: 'partial', source: 'Finance', note: '38 of 60 current' },
-          { id: 'e9', label: 'Financial review dates per supplier', status: 'collected', source: 'Vendor Mgmt' },
-        ],
-      },
-      {
-        id: 'risk4',
-        title: 'Incomplete regulatory coverage across geographies',
-        scenario: 'Products sold in multiple regions are not assessed against all applicable regulatory requirements, leading to non-compliance.',
-        severity: 'Medium',
-        evidence: [
-          { id: 'e10', label: 'Multi-geo production authorizations', status: 'missing', source: 'Regulatory' },
-          { id: 'e11', label: 'Regulatory change monitoring log', status: 'partial', source: 'Horizon Scanning', note: 'EU/UK only so far' },
+        id: 'c3',
+        name: 'Control 3',
+        title: 'Production Testing & Shipment Controls',
+        risk: 'Failed test results do not trigger shipment holds, allowing non-conforming product to ship.',
+        testSteps: [
+          {
+            id: '3.3',
+            label: 'Confirm PSI sampling AQL levels',
+            priority: 'medium',
+            howTo: [
+              'Obtain the PSI sampling plans for active production lines.',
+              'Verify the AQL levels used match policy.',
+              'Note any lines sampled below the required AQL.',
+            ],
+          },
+          {
+            id: '3.4',
+            label: 'Test failed tests → shipment holds linkage',
+            priority: 'high',
+            howTo: [
+              'Pull the failed-test log and the shipment hold log for the period.',
+              'Trace each failed test to a corresponding shipment hold.',
+              'Flag any failed test with no hold applied.',
+            ],
+          },
         ],
       },
     ],
   },
 ];
 
-const STATUS_META = {
-  collected: { label: 'Collected', color: '#037f0c', emoji: '🟢' },
-  partial: { label: 'Partial', color: '#ec7211', emoji: '🟠' },
-  missing: { label: 'Missing', color: '#d13212', emoji: '🔴' },
-};
+const PRIORITY_COLOR = { high: '#d13212', medium: '#ec7211', low: '#5f6b7a' };
 
-const SEVERITY_COLOR = { High: '#d13212', Medium: '#ec7211', Low: '#5f6b7a' };
-
-function coveragePct(evidence) {
-  if (!evidence.length) return 0;
-  const score = evidence.reduce((acc, e) => acc + (e.status === 'collected' ? 1 : e.status === 'partial' ? 0.5 : 0), 0);
-  return Math.round((score / evidence.length) * 100);
-}
-
-export default function RiskDigest({ onGenerateRequests, existingRequests = [], onGoToDashboard }) {
-  const [reportId, setReportId] = useState(SAMPLE_REPORTS[0].id);
+export default function RiskDigest({ onGenerateRequests, onGoToDashboard }) {
+  const [rcmId, setRcmId] = useState(SAMPLE_RCMS[0].id);
   const [expanded, setExpanded] = useState(null);
   const [prompt, setPrompt] = useState('');
-  const [response, setResponse] = useState(null);
   const [thinking, setThinking] = useState(false);
-  const [generatedLabels, setGeneratedLabels] = useState([]);
+  const [generatedIds, setGeneratedIds] = useState([]);
   const [toast, setToast] = useState('');
 
-  const report = SAMPLE_REPORTS.find((r) => r.id === reportId);
+  const rcm = SAMPLE_RCMS.find((r) => r.id === rcmId);
+  const allSteps = rcm.controls.flatMap((c) => c.testSteps.map((s) => ({ ...s, control: c })));
 
-  const priorityForSeverity = (sev) => (sev === 'High' ? 'high' : sev === 'Medium' ? 'medium' : 'low');
+  // Turn a test step into a to-do whose description explains how to complete it
+  const stepToTodo = (step, control) => ({
+    title: step.label,
+    status: 'open',
+    priority: step.priority || 'medium',
+    assignee: 'Unassigned',
+    assigned_to: '',
+    risk_tag: `${control.name}: ${control.title}`,
+    description:
+      `Test step ${step.id} — ${control.name}: ${control.title} (${rcm.name}, ${rcm.code}).\n\n` +
+      `To complete this test step:\n` +
+      step.howTo.map((h, i) => `${i + 1}. ${h}`).join('\n'),
+  });
 
-  // Turn a risk's not-yet-collected evidence into draft data requests, tagged to the risk
-  const generateForRisk = (risk) => {
-    const items = risk.evidence.filter((e) => e.status !== 'collected' && !generatedLabels.includes(e.id));
-    if (items.length === 0) {
-      setToast('All evidence for this risk is already collected or already generated.');
-      return;
-    }
-    const toCreate = items.map((e) => ({
-      title: e.label,
-      status: 'open',
-      priority: priorityForSeverity(risk.severity),
-      assignee: 'Unassigned',
-      assigned_to: '',
-      description: `Auto-generated from risk "${risk.title}" (${report.name}, ${report.code}). Source: ${e.source}. Needed to evidence this ${risk.severity.toLowerCase()}-severity risk.`,
-      risk_tag: risk.title,
-      source: e.source,
-    }));
-    onGenerateRequests?.(toCreate);
-    setGeneratedLabels((prev) => [...prev, ...items.map((e) => e.id)]);
-    setToast(`Created ${toCreate.length} data request${toCreate.length === 1 ? '' : 's'} from "${risk.title}".`);
+  const generateForControl = (control) => {
+    const steps = control.testSteps.filter((s) => !generatedIds.includes(`${control.id}.${s.id}`));
+    if (steps.length === 0) { setToast(`All test steps in ${control.name} already have to-dos.`); return; }
+    onGenerateRequests?.(steps.map((s) => stepToTodo(s, control)));
+    setGeneratedIds((prev) => [...prev, ...steps.map((s) => `${control.id}.${s.id}`)]);
+    setToast(`Created ${steps.length} to-do${steps.length === 1 ? '' : 's'} from ${control.name}.`);
   };
 
-  // Generate requests for every missing/partial item across all risks
-  const generateAll = () => {
+  const generateAll = (filterFn) => {
     const items = [];
-    report.risks.forEach((risk) => {
-      risk.evidence
-        .filter((e) => e.status !== 'collected' && !generatedLabels.includes(e.id))
-        .forEach((e) => items.push({
-          title: e.label,
-          status: 'open',
-          priority: priorityForSeverity(risk.severity),
-          assignee: 'Unassigned',
-          assigned_to: '',
-          description: `Auto-generated from risk "${risk.title}" (${report.name}, ${report.code}). Source: ${e.source}.`,
-          risk_tag: risk.title,
-          source: e.source,
-          _eid: e.id,
-        }));
+    rcm.controls.forEach((control) => {
+      control.testSteps.forEach((s) => {
+        const key = `${control.id}.${s.id}`;
+        if (generatedIds.includes(key)) return;
+        if (filterFn && !filterFn(s, control)) return;
+        items.push({ ...stepToTodo(s, control), _key: key });
+      });
     });
-    if (items.length === 0) { setToast('Nothing left to generate — all gaps already have requests.'); return; }
-    onGenerateRequests?.(items.map(({ _eid, ...rest }) => rest));
-    setGeneratedLabels((prev) => [...prev, ...items.map((i) => i._eid)]);
-    setToast(`Created ${items.length} data requests across the report. Check the Dashboard.`);
+    if (items.length === 0) { setToast('Nothing new to generate — those test steps already have to-dos.'); return; }
+    onGenerateRequests?.(items.map(({ _key, ...rest }) => rest));
+    setGeneratedIds((prev) => [...prev, ...items.map((i) => i._key)]);
+    setToast(`Created ${items.length} to-do${items.length === 1 ? '' : 's'}. Check the Dashboard.`);
   };
 
-  // Overall coverage across all risks
-  const allEvidence = report.risks.flatMap((r) => r.evidence);
-  const overallPct = coveragePct(allEvidence);
-  const missingCount = allEvidence.filter((e) => e.status === 'missing').length;
-  const partialCount = allEvidence.filter((e) => e.status === 'partial').length;
-
-  // Generates a digest summary from the report's risk/evidence data.
-  // In production this call routes through Kiro + the IA Researcher MCP
-  // (get_risk_scenarios, get_coes, etc.) to summarize live findings.
-  const buildSummary = () => {
-    const missing = allEvidence.filter((e) => e.status === 'missing');
-    const partial = allEvidence.filter((e) => e.status === 'partial');
-    const topRisks = [...report.risks].sort((a, b) => coveragePct(a.evidence) - coveragePct(b.evidence)).slice(0, 2);
-    const highSev = report.risks.filter((r) => r.severity === 'High');
-
-    return {
-      headline: `${report.name} — ${overallPct}% evidence coverage across ${report.risks.length} risks.`,
-      points: [
-        `${highSev.length} high-severity risk${highSev.length === 1 ? '' : 's'} in scope: ${highSev.map((r) => r.title).join('; ')}.`,
-        `Biggest gaps are in "${topRisks[0].title}" (${coveragePct(topRisks[0].evidence)}% covered)${topRisks[1] ? ` and "${topRisks[1].title}" (${coveragePct(topRisks[1].evidence)}% covered)` : ''}.`,
-        `${missing.length} evidence item${missing.length === 1 ? '' : 's'} not yet collected — e.g. ${missing.slice(0, 3).map((e) => e.label).join('; ')}.`,
-        `${partial.length} item${partial.length === 1 ? '' : 's'} partially collected and need follow-up to close.`,
-      ],
-      recommendation: missing.length > 0
-        ? `Priority: chase the ${missing.length} missing item${missing.length === 1 ? '' : 's'}, starting with the high-severity risks, before fieldwork begins.`
-        : `Coverage is strong — focus on closing the ${partial.length} partial item${partial.length === 1 ? '' : 's'}.`,
-    };
-  };
-
+  // Prompt-driven: match the prompt against control titles / step labels, then generate
   const handleAsk = (e) => {
     e.preventDefault();
     if (!prompt.trim()) return;
     setThinking(true);
-    setResponse(null);
-    // Simulated round-trip to Kiro + Researcher MCP
+    const q = prompt.toLowerCase();
     setTimeout(() => {
-      setResponse(buildSummary());
+      generateAll((s, c) =>
+        `${c.title} ${c.name} ${s.label} ${s.howTo.join(' ')}`.toLowerCase().split(/\W+/).some((w) => w && q.includes(w))
+      );
       setThinking(false);
-    }, 1200);
+      setPrompt('');
+    }, 900);
   };
 
   const samplePrompts = [
-    'Summarize the key findings and what evidence is still missing',
-    'Which risks are least covered?',
-    'What should I prioritize before fieldwork?',
+    'Generate to-dos for the FQA control',
+    'Build to-dos for supplier onboarding test steps',
+    'Create to-dos for shipment / testing controls',
   ];
 
   return (
     <div className="risk-digest">
       <div className="risk-digest-header">
         <div>
-          <h3>🎯 Risk-Driven Evidence Digest</h3>
-          <p className="muted">Only the evidence each risk actually needs — coverage and gaps at a glance.</p>
+          <h3>🧩 RCM → To-Do Generator</h3>
+          <p className="muted">Reads the RCM's test steps and turns them into tracked to-dos — each one explaining how to complete the step.</p>
         </div>
-        <select className="risk-report-select" value={reportId} onChange={(e) => setReportId(e.target.value)}>
-          {SAMPLE_REPORTS.map((r) => (
+        <select className="risk-report-select" value={rcmId} onChange={(e) => setRcmId(e.target.value)}>
+          {SAMPLE_RCMS.map((r) => (
             <option key={r.id} value={r.id}>{r.name}</option>
           ))}
         </select>
@@ -197,10 +199,10 @@ export default function RiskDigest({ onGenerateRequests, existingRequests = [], 
             className="ask-input"
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
-            placeholder="Ask about this report's risks & findings…"
+            placeholder="Describe the test steps you want to-dos for…"
           />
           <button type="submit" className="btn btn-primary ask-btn" disabled={thinking}>
-            {thinking ? '…' : '✨ Ask Kiro'}
+            {thinking ? '…' : '✨ Generate'}
           </button>
         </form>
         <div className="ask-suggestions">
@@ -210,42 +212,25 @@ export default function RiskDigest({ onGenerateRequests, existingRequests = [], 
         </div>
         {thinking && (
           <div className="ask-response ask-thinking">
-            <span className="ask-spinner">⟳</span> Querying IA Researcher via Kiro…
-          </div>
-        )}
-        {response && !thinking && (
-          <div className="ask-response">
-            <div className="ask-response-head">🤖 Digest Summary</div>
-            <p className="ask-headline">{response.headline}</p>
-            <ul className="ask-points">
-              {response.points.map((pt, i) => <li key={i}>{pt}</li>)}
-            </ul>
-            <p className="ask-reco">💡 {response.recommendation}</p>
-            <p className="ask-disclaimer">Generated from report data. Live mode routes through the IA Researcher MCP.</p>
+            <span className="ask-spinner">⟳</span> Reading the RCM and building to-dos…
           </div>
         )}
       </div>
 
       <div className="risk-report-meta">
-        <span className="risk-meta-badge">📄 {report.code}</span>
-        <span className="risk-meta-badge">👤 VP: {report.vp}</span>
-        <span className="risk-meta-badge">⚠️ {report.risks.length} risks in scope</span>
+        <span className="risk-meta-badge">📄 {rcm.code}</span>
+        <span className="risk-meta-badge">🧩 {rcm.controls.length} controls</span>
+        <span className="risk-meta-badge">✅ {allSteps.length} test steps</span>
       </div>
 
       <div className="risk-overall-card">
         <div className="risk-overall-top">
-          <span className="risk-overall-label">Overall Evidence Coverage</span>
-          <span className="risk-overall-pct" style={{ color: overallPct >= 80 ? '#037f0c' : overallPct >= 50 ? '#ec7211' : '#d13212' }}>{overallPct}%</span>
-        </div>
-        <div className="risk-overall-bar"><div className="risk-overall-fill" style={{ width: `${overallPct}%`, background: overallPct >= 80 ? '#037f0c' : overallPct >= 50 ? '#ec7211' : '#d13212' }} /></div>
-        <div className="risk-overall-stats">
-          <span className="stat stat-overdue">🔴 {missingCount} missing</span>
-          <span className="stat stat-active">🟠 {partialCount} partial</span>
-          <span className="stat stat-done">🟢 {allEvidence.length - missingCount - partialCount} collected</span>
+          <span className="risk-overall-label">Generate to-dos from this RCM</span>
+          <span className="risk-overall-pct" style={{ color: '#0972d3' }}>{generatedIds.length}/{allSteps.length}</span>
         </div>
         <div className="risk-generate-bar">
-          <button className="btn btn-primary btn-sm" onClick={generateAll}>⚡ Auto-generate data requests for all gaps</button>
-          <span className="risk-generate-hint">Turns every missing / partial item into a tracked request, tagged to its risk.</span>
+          <button className="btn btn-primary btn-sm" onClick={() => generateAll()}>⚡ Generate to-dos for all test steps</button>
+          <span className="risk-generate-hint">Each to-do lands in the Dashboard with step-by-step instructions on how to complete it.</span>
         </div>
       </div>
 
@@ -258,41 +243,39 @@ export default function RiskDigest({ onGenerateRequests, existingRequests = [], 
       )}
 
       <div className="risk-list">
-        {report.risks.map((risk) => {
-          const pct = coveragePct(risk.evidence);
-          const isOpen = expanded === risk.id;
+        {rcm.controls.map((control) => {
+          const isOpen = expanded === control.id;
+          const genCount = control.testSteps.filter((s) => generatedIds.includes(`${control.id}.${s.id}`)).length;
           return (
-            <div key={risk.id} className="risk-card">
-              <div className="risk-card-head" onClick={() => setExpanded(isOpen ? null : risk.id)}>
+            <div key={control.id} className="risk-card">
+              <div className="risk-card-head" onClick={() => setExpanded(isOpen ? null : control.id)}>
                 <span className="risk-expand">{isOpen ? '▾' : '▸'}</span>
                 <div className="risk-card-title-wrap">
-                  <span className="risk-card-title">{risk.title}</span>
-                  <span className="risk-severity" style={{ color: SEVERITY_COLOR[risk.severity] }}>{risk.severity} severity</span>
+                  <span className="risk-card-title">{control.name}: {control.title}</span>
+                  <span className="risk-severity">{control.testSteps.length} test steps · {genCount} generated</span>
                 </div>
-                <span className="risk-card-pct" style={{ color: pct >= 80 ? '#037f0c' : pct >= 50 ? '#ec7211' : '#d13212' }}>{pct}%</span>
               </div>
-              <div className="risk-card-bar"><div className="risk-card-fill" style={{ width: `${pct}%`, background: pct >= 80 ? '#037f0c' : pct >= 50 ? '#ec7211' : '#d13212' }} /></div>
 
               {isOpen && (
                 <div className="risk-card-body">
-                  <p className="risk-scenario">{risk.scenario}</p>
+                  <p className="risk-scenario">Risk: {control.risk}</p>
                   <div className="risk-evidence-head">
-                    <h5>Required Evidence</h5>
-                    <button className="btn btn-secondary btn-sm" onClick={(e) => { e.stopPropagation(); generateForRisk(risk); }}>⚡ Generate requests for gaps</button>
+                    <h5>Test Steps</h5>
+                    <button className="btn btn-secondary btn-sm" onClick={(e) => { e.stopPropagation(); generateForControl(control); }}>⚡ Generate to-dos for this control</button>
                   </div>
                   <div className="evidence-list">
-                    {risk.evidence.map((e) => {
-                      const meta = STATUS_META[e.status];
-                      const isGen = generatedLabels.includes(e.id);
+                    {control.testSteps.map((s) => {
+                      const isGen = generatedIds.includes(`${control.id}.${s.id}`);
                       return (
-                        <div key={e.id} className="evidence-item" style={{ borderLeftColor: meta.color }}>
-                          <span className="evidence-status">{meta.emoji}</span>
+                        <div key={s.id} className="evidence-item" style={{ borderLeftColor: PRIORITY_COLOR[s.priority] }}>
+                          <span className="evidence-status">🔹</span>
                           <div className="evidence-main">
-                            <span className="evidence-label">{e.label}</span>
-                            <span className="evidence-source">{e.source}{e.note ? ` — ${e.note}` : ''}</span>
+                            <span className="evidence-label">{s.id} — {s.label}</span>
+                            <span className="evidence-source">To complete: {s.howTo.join(' → ')}</span>
                           </div>
-                          {isGen && <span className="evidence-gen-badge">📋 request created</span>}
-                          <span className="evidence-badge" style={{ color: meta.color, borderColor: meta.color }}>{meta.label}</span>
+                          {isGen
+                            ? <span className="evidence-gen-badge">📋 to-do created</span>
+                            : <button className="evidence-gen-btn" onClick={(e) => { e.stopPropagation(); onGenerateRequests?.([stepToTodo(s, control)]); setGeneratedIds((prev) => [...prev, `${control.id}.${s.id}`]); setToast(`Created to-do for step ${s.id}.`); }}>+ To-do</button>}
                         </div>
                       );
                     })}
@@ -304,7 +287,7 @@ export default function RiskDigest({ onGenerateRequests, existingRequests = [], 
         })}
       </div>
 
-      <p className="risk-digest-footnote">Sample data shown. Connects to IA Researcher (risk scenarios, COEs, report data) once the researcher MCP is configured.</p>
+      <p className="risk-digest-footnote">Sample RCM shown. Connects to a live RCM once linked.</p>
     </div>
   );
 }
