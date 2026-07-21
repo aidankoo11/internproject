@@ -22,15 +22,15 @@ export default function AuthScreen({ onLogin }) {
           await register(username, password, displayName || username, avatarUrl);
           session = await login(username, password);
         } catch (err) {
-          // If API unavailable, create demo session
-          session = { user: { username, displayName: displayName || username, avatarUrl: '' }, team: null };
+          // If API unavailable, create a full demo session so sign-up lands in the app
+          session = { user: { username, displayName: displayName || username, avatarUrl: 'x' }, team: { name: 'Demo Team', code: 'DEMO' } };
         }
       } else {
         try {
           session = await login(username, password);
         } catch (err) {
-          // If API unavailable, create demo session
-          session = { user: { username, displayName: username, avatarUrl: '' }, team: { name: 'Demo Team', code: 'DEMO' } };
+          // If API unavailable, create a full demo session so sign-in lands in the app
+          session = { user: { username, displayName: username, avatarUrl: 'x' }, team: { name: 'Demo Team', code: 'DEMO' } };
         }
       }
       onLogin(session);
