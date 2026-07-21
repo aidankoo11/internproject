@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import * as XLSX from 'xlsx';
 
 // Heuristics to auto-detect which columns hold what
@@ -8,6 +8,8 @@ const COLUMN_HINTS = {
   step: ['test step', 'test procedure', 'procedure', 'step', 'test', 'testing step', 'audit step', 'description'],
   owner: ['assigned to', 'owner', 'assignee', 'responsible', 'preparer'],
 };
+
+const STORAGE_KEY = 'rcm_todo_list';
 
 function guessColumn(headers, hints) {
   const lower = headers.map((h) => String(h).toLowerCase().trim());
@@ -22,7 +24,7 @@ function guessColumn(headers, hints) {
   return '';
 }
 
-export default function RcmUpload({ onGenerate, onGoToDashboard }) {
+export default function RcmUpload({ onGenerate, onGoToDashboard, teamRequests = [] }) {
   const [rows, setRows] = useState([]);
   const [headers, setHeaders] = useState([]);
   const [mapping, setMapping] = useState({ control: '', stepId: '', step: '', owner: '' });
@@ -30,6 +32,23 @@ export default function RcmUpload({ onGenerate, onGoToDashboard }) {
   const [selectedControls, setSelectedControls] = useState([]);
   const [error, setError] = useState('');
   const [toast, setToast] = useState('');
+  // The user's own generated to-do list (persisted). Each control -> steps with `done`.
+  const [myList, setMyList] = useState([]);
+  // Which control folders are collapsed (by control name)
+  const [collapsed, setCollapsed] = useState({});
+
+  // Load any previously generated checklist on mount
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) setMyList(JSON.parse(saved));
+    } catch { /* ignore corrupt storage */ }
+  }, []);
+
+  const persist = (list) => {
+    setMyList(list);
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(list)); } catch { /* ignore */ }
+  };
 
   const handleFile = (e) => {
     const file = e.target.files[0];
@@ -84,6 +103,26 @@ export default function RcmUpload({ onGenerate, onGoToDashboard }) {
 
   const generate = () => {
     const chosen = controls.filter((c) => selectedControls.includes(c.name));
+    const totalStepsChosen = chosen.reduce((n, c) => n + c.steps.length, 0);
+    if (totalStepsChosen === 0) { setToast('No test steps found for the selected controls.'); return; }
+
+    // Preserve any previously-ticked steps when regenerating
+    const prevDone = {};
+    myList.forEach((c) => c.steps.forEach((s) => { prevDone[`${c.name}||${s.stepId}||${s.step}`] = s.done; }));
+
+    // Build the user's own checkbox to-do list (grouped by control)
+    const checklist = chosen.map((c) => ({
+      name: c.name,
+      steps: c.steps.map((s) => ({
+        stepId: s.stepId,
+        step: s.step,
+        owner: s.owner,
+        done: prevDone[`${c.name}||${s.stepId}||${s.step}`] || false,
+      })),
+    }));
+    persist(checklist);
+
+    // Also feed the shared team dashboard (unchanged behaviour)
     const todos = [];
     chosen.forEach((c) => {
       c.steps.forEach((s) => {
@@ -98,12 +137,37 @@ export default function RcmUpload({ onGenerate, onGoToDashboard }) {
         });
       });
     });
-    if (todos.length === 0) { setToast('No test steps found for the selected controls.'); return; }
     onGenerate?.(todos);
-    setToast(`Generated ${todos.length} to-do${todos.length === 1 ? '' : 's'} from ${chosen.length} control${chosen.length === 1 ? '' : 's'}. Check the Dashboard.`);
+    setToast(`Built your to-do list: ${totalStepsChosen} step${totalStepsChosen === 1 ? '' : 's'} across ${chosen.length} control${chosen.length === 1 ? '' : 's'}.`);
   };
 
+  const toggleStep = (controlName, stepId, stepText) => {
+    persist(myList.map((c) => {
+      if (c.name !== controlName) return c;
+      return { ...c, steps: c.steps.map((s) => (s.stepId === stepId && s.step === stepText) ? { ...s, done: !s.done } : s) };
+    }));
+  };
+
+  const clearList = () => {
+    persist([]);
+    setToast('');
+  };
+
+  const toggleFolder = (name) => setCollapsed((prev) => ({ ...prev, [name]: !prev[name] }));
+
   const totalSteps = controls.filter((c) => selectedControls.includes(c.name)).reduce((n, c) => n + c.steps.length, 0);
+
+  // Personal completion — from the user's own generated checklist
+  const listDoneCount = myList.reduce((n, c) => n + c.steps.filter((s) => s.done).length, 0);
+  const listTotal = myList.reduce((n, c) => n + c.steps.length, 0);
+  const personalPct = listTotal > 0 ? Math.round((listDoneCount / listTotal) * 100) : 0;
+
+  // Team completion — from the shared tracker (all requests marked done)
+  const teamDone = teamRequests.filter((r) => r.status === 'done').length;
+  const teamTotal = teamRequests.length;
+  const teamPct = teamTotal > 0 ? Math.round((teamDone / teamTotal) * 100) : 0;
+
+  const pctColor = (p) => (p === 100 ? '#037f0c' : p > 0 ? '#ec7211' : '#9ca3af');
 
   return (
     <div className="rcm-upload">
@@ -167,8 +231,73 @@ export default function RcmUpload({ onGenerate, onGoToDashboard }) {
       {toast && (
         <div className="risk-toast">
           <span>✅ {toast}</span>
-          {onGoToDashboard && <button className="risk-toast-link" onClick={onGoToDashboard}>Go to Dashboard →</button>}
           <button className="risk-toast-close" onClick={() => setToast('')}>✕</button>
+        </div>
+      )}
+
+      {myList.length > 0 && (
+        <div className="rcm-mylist">
+          {/* Overall completion — personal + team */}
+          <div className="rcm-overall">
+            <div className="rcm-overall-card">
+              <div className="rcm-overall-top">
+                <span className="rcm-overall-label">👤 Personal Overall</span>
+                <span className="rcm-overall-pct" style={{ color: pctColor(personalPct) }}>{personalPct}%</span>
+              </div>
+              <div className="rcm-overall-bar"><div className="rcm-overall-fill" style={{ width: `${personalPct}%`, background: pctColor(personalPct) }} /></div>
+              <span className="rcm-overall-sub">{listDoneCount} of {listTotal} test steps done</span>
+            </div>
+            <div className="rcm-overall-card">
+              <div className="rcm-overall-top">
+                <span className="rcm-overall-label">👥 Team Overall</span>
+                <span className="rcm-overall-pct" style={{ color: pctColor(teamPct) }}>{teamPct}%</span>
+              </div>
+              <div className="rcm-overall-bar"><div className="rcm-overall-fill" style={{ width: `${teamPct}%`, background: pctColor(teamPct) }} /></div>
+              <span className="rcm-overall-sub">{teamDone} of {teamTotal} tracker items done</span>
+            </div>
+          </div>
+
+          <div className="control-checklist">
+            <div className="checklist-header">
+              <h3>✅ My To-Do List <span className="rcm-mylist-progress">{listDoneCount}/{listTotal} done</span></h3>
+              <div className="checklist-actions">
+                {onGoToDashboard && <button className="btn btn-secondary btn-sm" onClick={onGoToDashboard}>Go to Dashboard →</button>}
+                <button className="btn btn-secondary btn-sm" onClick={clearList}>🗑️ Clear</button>
+              </div>
+            </div>
+
+            {/* One collapsible folder per control */}
+            <div className="rcm-folders">
+              {myList.map((c) => {
+                const doneCount = c.steps.filter((s) => s.done).length;
+                const pct = Math.round((doneCount / c.steps.length) * 100);
+                const isCollapsed = !!collapsed[c.name];
+                return (
+                  <div key={c.name} className="rcm-folder">
+                    <div className="rcm-folder-head" onClick={() => toggleFolder(c.name)}>
+                      <span className="rcm-folder-caret">{isCollapsed ? '▸' : '▾'}</span>
+                      <span className="rcm-folder-icon">{isCollapsed ? '📁' : '📂'}</span>
+                      <span className="rcm-folder-name">{c.name}</span>
+                      <span className="rcm-folder-count">{doneCount}/{c.steps.length} steps</span>
+                      <span className="rcm-folder-pct" style={{ color: pctColor(pct) }}>{pct}%</span>
+                    </div>
+                    <div className="checklist-bar rcm-folder-bar"><div className="checklist-bar-fill" style={{ width: `${pct}%` }} /></div>
+                    {!isCollapsed && (
+                      <div className="checklist-steps rcm-folder-steps">
+                        {c.steps.map((s, i) => (
+                          <label key={`${s.stepId}-${i}`} className={`checklist-step ${s.done ? 'checklist-step-done' : ''}`}>
+                            <input type="checkbox" checked={s.done} onChange={() => toggleStep(c.name, s.stepId, s.step)} />
+                            {s.stepId && <span className="checklist-step-id">{s.stepId}</span>}
+                            <span className="checklist-step-label">{s.step}{s.owner ? ` — ${s.owner}` : ''}</span>
+                          </label>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
         </div>
       )}
     </div>

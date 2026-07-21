@@ -12,7 +12,6 @@ import TeamScreen from './components/TeamScreen';
 import AvatarSetup from './components/AvatarSetup';
 import SearchBar from './components/SearchBar';
 import ActivityFeed from './components/ActivityFeed';
-import RiskDigest from './components/RiskDigest';
 import RcmUpload from './components/RcmUpload';
 
 export default function App() {
@@ -130,7 +129,7 @@ export default function App() {
             </div>
           </div>
         )}
-        {view === 'dashboard' && tab === 'rcm' && <RcmUpload onGenerate={handleGenerateRequests} onGoToDashboard={() => setTab('dashboard')} />}
+        {view === 'dashboard' && tab === 'rcm' && <RcmUpload onGenerate={handleGenerateRequests} onGoToDashboard={() => setTab('dashboard')} teamRequests={allRequests} />}
         {view === 'dashboard' && tab === 'team' && (
           <div className="team-panel">
             <div className="team-info-card">

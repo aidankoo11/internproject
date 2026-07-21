@@ -2288,3 +2288,72 @@ body {
 .rcm-control-count { font-size: 12px; color: #8d99a8; }
 
 .rcm-generate-bar { margin-top: 20px; }
+
+/* RCM-generated personal to-do list */
+.rcm-mylist { margin-top: 28px; }
+.rcm-mylist-progress {
+  font-size: 12px;
+  font-weight: 600;
+  color: #5f6b7a;
+  margin-left: 8px;
+}
+.rcm-mylist .checklist-step { cursor: pointer; }
+
+/* Overall completion cards (personal + team) */
+.rcm-overall {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+.rcm-overall-card {
+  background: white;
+  border: 1px solid #e9ebed;
+  border-radius: 12px;
+  padding: 16px 18px;
+}
+.rcm-overall-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.rcm-overall-label { font-weight: 700; font-size: 14px; }
+.rcm-overall-pct { font-size: 22px; font-weight: 800; }
+.rcm-overall-bar {
+  height: 8px;
+  background: #e9ebed;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+.rcm-overall-fill { height: 100%; border-radius: 4px; transition: width 0.3s; }
+.rcm-overall-sub { font-size: 12px; color: #8d99a8; }
+
+/* Collapsible per-control folders */
+.rcm-folders { display: flex; flex-direction: column; gap: 12px; }
+.rcm-folder {
+  border: 1px solid #e9ebed;
+  border-radius: 10px;
+  overflow: hidden;
+}
+.rcm-folder-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  cursor: pointer;
+  background: #f9fafb;
+}
+.rcm-folder-head:hover { background: #f2f4f6; }
+.rcm-folder-caret { color: #5f6b7a; font-size: 12px; width: 12px; }
+.rcm-folder-icon { font-size: 15px; }
+.rcm-folder-name { flex: 1; font-weight: 700; font-size: 14px; }
+.rcm-folder-count { font-size: 12px; color: #8d99a8; }
+.rcm-folder-pct { font-size: 14px; font-weight: 800; margin-left: 12px; }
+.rcm-folder-bar { margin: 0; border-radius: 0; }
+.rcm-folder-steps { padding: 8px 14px 12px; }
+
+@media (max-width: 768px) {
+  .rcm-overall { grid-template-columns: 1fr; }
+}
