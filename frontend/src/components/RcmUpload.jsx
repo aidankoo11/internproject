@@ -32,6 +32,7 @@ export default function RcmUpload({ onGenerate, onGoToDashboard, teamRequests = 
   const [selectedControls, setSelectedControls] = useState([]);
   const [error, setError] = useState('');
   const [toast, setToast] = useState('');
+  const [dragging, setDragging] = useState(false);
   // The user's own generated to-do list (persisted). Each control -> steps with `done`.
   const [myList, setMyList] = useState([]);
   // Which control folders are collapsed (by control name)
@@ -50,9 +51,13 @@ export default function RcmUpload({ onGenerate, onGoToDashboard, teamRequests = 
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(list)); } catch { /* ignore */ }
   };
 
-  const handleFile = (e) => {
-    const file = e.target.files[0];
+  const parseFile = (file) => {
     if (!file) return;
+    const name = file.name.toLowerCase();
+    if (!/\.(xlsx|xls|csv)$/.test(name)) {
+      setError('Unsupported file type. Please upload an .xlsx, .xls, or .csv file.');
+      return;
+    }
     setError('');
     setFileName(file.name);
     const reader = new FileReader();
@@ -77,6 +82,16 @@ export default function RcmUpload({ onGenerate, onGoToDashboard, teamRequests = 
       }
     };
     reader.readAsArrayBuffer(file);
+  };
+
+  const handleFile = (e) => parseFile(e.target.files[0]);
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setDragging(false);
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      parseFile(e.dataTransfer.files[0]);
+    }
   };
 
   // Group rows into controls -> steps using the current mapping
@@ -178,10 +193,15 @@ export default function RcmUpload({ onGenerate, onGoToDashboard, teamRequests = 
         <p className="muted">Upload your Risk Control Matrix, pick the controls assigned to you, and get a checklist built from the test steps.</p>
       </div>
 
-      <label className="rcm-dropzone">
+      <label
+        className={`rcm-dropzone ${dragging ? 'rcm-dropzone-active' : ''}`}
+        onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
+        onDragLeave={(e) => { e.preventDefault(); setDragging(false); }}
+        onDrop={handleDrop}
+      >
         <input type="file" accept=".xlsx,.xls,.csv" onChange={handleFile} style={{ display: 'none' }} />
         <span className="rcm-drop-icon">📄</span>
-        <span className="rcm-drop-text">{fileName || 'Click to upload an RCM file (.xlsx or .csv)'}</span>
+        <span className="rcm-drop-text">{fileName || (dragging ? 'Drop your RCM file here…' : 'Click to upload or drag & drop an RCM file (.xlsx or .csv)')}</span>
       </label>
 
       {error && <div className="error">{error}</div>}
@@ -213,13 +233,28 @@ export default function RcmUpload({ onGenerate, onGoToDashboard, teamRequests = 
         <div className="rcm-controls">
           <h4>Select your assigned control(s)</h4>
           <div className="rcm-control-list">
-            {controls.map((c) => (
-              <label key={c.name} className={`rcm-control-item ${selectedControls.includes(c.name) ? 'rcm-control-selected' : ''}`}>
-                <input type="checkbox" checked={selectedControls.includes(c.name)} onChange={() => toggleControl(c.name)} />
-                <span className="rcm-control-name">{c.name}</span>
-                <span className="rcm-control-count">{c.steps.length} test steps</span>
-              </label>
-            ))}
+            {controls.map((c) => {
+              const isSelected = selectedControls.includes(c.name);
+              return (
+                <div key={c.name} className={`rcm-control-block ${isSelected ? 'rcm-control-selected' : ''}`}>
+                  <label className="rcm-control-item">
+                    <input type="checkbox" checked={isSelected} onChange={() => toggleControl(c.name)} />
+                    <span className="rcm-control-name">{c.name}</span>
+                    <span className="rcm-control-count">{c.steps.length} test steps</span>
+                  </label>
+                  {isSelected && (
+                    <ul className="rcm-control-steps">
+                      {c.steps.map((s, i) => (
+                        <li key={`${s.stepId}-${i}`} className="rcm-control-step">
+                          {s.stepId && <span className="rcm-step-id">{s.stepId}</span>}
+                          <span className="rcm-step-text">{s.step}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              );
+            })}
           </div>
 
           <div className="rcm-generate-bar">
