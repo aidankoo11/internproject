@@ -2217,3 +2217,74 @@ body {
   white-space: nowrap;
 }
 .evidence-gen-btn:hover { background: #f2f8fd; }
+
+/* RCM Upload */
+.rcm-upload {
+  background: white;
+  border: 1px solid #e9ebed;
+  border-radius: 16px;
+  padding: 24px;
+}
+
+.rcm-header h3 { font-size: 18px; font-weight: 800; margin-bottom: 4px; }
+.rcm-header { margin-bottom: 16px; }
+
+.rcm-dropzone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 2px dashed #c4b5fd;
+  border-radius: 12px;
+  padding: 32px;
+  cursor: pointer;
+  background: #faf5ff;
+  transition: all 0.15s;
+}
+.rcm-dropzone:hover { border-color: #7c3aed; background: #f5f3ff; }
+.rcm-drop-icon { font-size: 32px; }
+.rcm-drop-text { font-size: 14px; font-weight: 600; color: #5b21b6; }
+
+.rcm-mapping { margin-top: 20px; }
+.rcm-mapping h4 { font-size: 14px; font-weight: 700; margin-bottom: 2px; }
+
+.rcm-map-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.rcm-map-field { display: flex; flex-direction: column; gap: 4px; }
+.rcm-map-field label { font-size: 12px; font-weight: 700; color: #5f6b7a; }
+.rcm-map-field .req { color: #d13212; margin-left: 2px; }
+.rcm-map-field select {
+  padding: 8px 12px;
+  border: 1px solid #d5dbdb;
+  border-radius: 8px;
+  font-size: 13px;
+  background: white;
+}
+
+.rcm-controls { margin-top: 24px; }
+.rcm-controls h4 { font-size: 14px; font-weight: 700; margin-bottom: 12px; }
+
+.rcm-control-list { display: flex; flex-direction: column; gap: 8px; }
+
+.rcm-control-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid #e9ebed;
+  border-radius: 10px;
+  padding: 12px 16px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.rcm-control-item:hover { border-color: #7c3aed; }
+.rcm-control-selected { background: #f5f3ff; border-color: #7c3aed; }
+.rcm-control-name { flex: 1; font-weight: 600; font-size: 14px; }
+.rcm-control-count { font-size: 12px; color: #8d99a8; }
+
+.rcm-generate-bar { margin-top: 20px; }

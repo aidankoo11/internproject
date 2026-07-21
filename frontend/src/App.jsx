@@ -13,6 +13,7 @@ import AvatarSetup from './components/AvatarSetup';
 import SearchBar from './components/SearchBar';
 import ActivityFeed from './components/ActivityFeed';
 import RiskDigest from './components/RiskDigest';
+import RcmUpload from './components/RcmUpload';
 
 export default function App() {
   const [user, setUser] = useState(() => { const s = localStorage.getItem('tracker_session'); return s ? JSON.parse(s).user : null; });
@@ -111,7 +112,7 @@ export default function App() {
       {view === 'dashboard' && (
         <div className="tabs">
           <button className={`tab ${tab === 'dashboard' ? 'tab-active' : ''}`} onClick={() => setTab('dashboard')}>📋 Dashboard</button>
-          <button className={`tab ${tab === 'risk' ? 'tab-active' : ''}`} onClick={() => setTab('risk')}>🧩 RCM → To-Dos</button>
+          <button className={`tab ${tab === 'rcm' ? 'tab-active' : ''}`} onClick={() => setTab('rcm')}>📤 Upload RCM</button>
           <button className={`tab ${tab === 'team' ? 'tab-active' : ''}`} onClick={() => setTab('team')}>👥 Team</button>
         </div>
       )}
@@ -129,7 +130,7 @@ export default function App() {
             </div>
           </div>
         )}
-        {view === 'dashboard' && tab === 'risk' && <RiskDigest onGenerateRequests={handleGenerateRequests} existingRequests={allRequests} onGoToDashboard={() => setTab('dashboard')} />}
+        {view === 'dashboard' && tab === 'rcm' && <RcmUpload onGenerate={handleGenerateRequests} onGoToDashboard={() => setTab('dashboard')} />}
         {view === 'dashboard' && tab === 'team' && (
           <div className="team-panel">
             <div className="team-info-card">
