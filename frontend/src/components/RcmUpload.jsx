@@ -128,10 +128,12 @@ export default function RcmUpload({ onGenerate, onGoToDashboard, teamRequests = 
       c.steps.forEach((s) => {
         todos.push({
           title: s.stepId ? `${s.stepId} — ${s.step}` : s.step,
-          status: 'open',
+          status: 'todo',
           priority: 'medium',
+          requester: fileName || 'RCM',
           assignee: s.owner || 'Unassigned',
           assigned_to: s.owner || '',
+          control: c.name,
           risk_tag: c.name,
           description: `Test step from control "${c.name}" (RCM: ${fileName}).${s.owner ? ` Assigned to ${s.owner}.` : ''}`,
         });
