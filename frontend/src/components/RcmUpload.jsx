@@ -1,49 +1,103 @@
 import React, { useState, useEffect } from 'react';
 import * as XLSX from 'xlsx';
 
-// Heuristics to auto-detect which columns hold what
-const COLUMN_HINTS = {
-  control: ['control', 'control id', 'control name', 'control #', 'control ref'],
-  stepId: ['test step id', 'step id', 'step #', 'test id', 'ref', 'step ref', 'test step ref'],
-  step: ['test step', 'test procedure', 'procedure', 'step', 'test', 'testing step', 'audit step', 'description'],
-  owner: ['assigned to', 'owner', 'assignee', 'responsible', 'preparer'],
-};
-
 const STORAGE_KEY = 'rcm_todo_list';
 
-function guessColumn(headers, hints) {
-  const lower = headers.map((h) => String(h).toLowerCase().trim());
-  for (const hint of hints) {
-    const idx = lower.findIndex((h) => h === hint);
-    if (idx !== -1) return headers[idx];
+// Find the column index whose header label matches a predicate
+function findCol(labelRow, predicate) {
+  for (let i = 0; i < labelRow.length; i++) {
+    const v = String(labelRow[i] || '').trim().toLowerCase();
+    if (v && predicate(v)) return i;
   }
-  for (const hint of hints) {
-    const idx = lower.findIndex((h) => h.includes(hint));
-    if (idx !== -1) return headers[idx];
+  return -1;
+}
+
+// Split a "How to Test" cell into individual test steps.
+// Handles top-level "1." / "2." and lettered sub-steps "a)" / "b)".
+function parseSteps(raw) {
+  const text = String(raw || '').replace(/\r/g, '');
+  const lines = text.split('\n').map((l) => l.trim()).filter(Boolean);
+  const parsed = [];
+  let curNum = null;
+  let lastIdx = -1;
+  for (const line of lines) {
+    const top = line.match(/^(\d+)\.\s*(.*)$/);
+    const sub = line.match(/^([a-zA-Z])\)\s*(.*)$/);
+    if (top) {
+      curNum = top[1];
+      parsed.push({ num: curNum, letter: '', text: top[2], hasSub: false });
+      lastIdx = parsed.length - 1;
+    } else if (sub && curNum) {
+      // mark the owning top-level as having sub-steps
+      for (let i = parsed.length - 1; i >= 0; i--) {
+        if (parsed[i].num === curNum && parsed[i].letter === '') { parsed[i].hasSub = true; break; }
+      }
+      parsed.push({ num: curNum, letter: sub[1].toLowerCase(), text: sub[2], hasSub: false });
+      lastIdx = parsed.length - 1;
+    } else if (lastIdx >= 0) {
+      parsed[lastIdx].text += ' ' + line;
+    }
   }
-  return '';
+  // Final steps: keep sub-steps, and top-levels that have no sub-steps
+  return parsed
+    .filter((p) => p.letter !== '' || !p.hasSub)
+    .map((p) => ({ id: `${p.num}${p.letter}`, text: p.text.trim() }));
+}
+
+// Parse an RCM workbook into controls -> test steps
+function parseRcm(arrayBuffer) {
+  const wb = XLSX.read(arrayBuffer, { type: 'array' });
+  const sheetName = wb.SheetNames.includes('RCM') ? 'RCM' : wb.SheetNames[0];
+  const rows = XLSX.utils.sheet_to_json(wb.Sheets[sheetName], { header: 1, defval: '' });
+
+  // Locate the label row (the one that contains "how to test")
+  let labelRowIdx = rows.findIndex((r) => r.some((c) => String(c).trim().toLowerCase() === 'how to test'));
+  if (labelRowIdx === -1) return { controls: [], error: 'Could not find a "How to Test" column. Is this an RCM export?' };
+
+  const labelRow = rows[labelRowIdx];
+  const howToCol = findCol(labelRow, (v) => v === 'how to test' || v.includes('how to test'));
+  const numCol = findCol(labelRow, (v) => v === 'control #' || v.includes('control #') || v === 'control#');
+  const nameCol = findCol(labelRow, (v) => v === 'sub-process');
+  const procCol = findCol(labelRow, (v) => v.includes('process description'));
+  const assignedCol = findCol(labelRow, (v) => v.includes('assigned'));
+
+  const controls = [];
+  for (let i = labelRowIdx + 1; i < rows.length; i++) {
+    const r = rows[i];
+    const howTo = String(r[howToCol] || '').trim();
+    if (!howTo) continue;
+    // Skip the instructions/description row (no numbered steps in it)
+    const steps = parseSteps(howTo);
+    if (steps.length === 0) continue;
+    const num = numCol > -1 ? String(r[numCol] || '').trim() : '';
+    const name = (nameCol > -1 && String(r[nameCol]).trim()) || (procCol > -1 && String(r[procCol]).trim()) || `Control ${num || i}`;
+    const assigned = assignedCol > -1 ? String(r[assignedCol] || '').trim() : '';
+    controls.push({
+      key: `${num || i}-${name}`,
+      num,
+      name,
+      assigned,
+      steps,
+    });
+  }
+  return { controls, error: controls.length === 0 ? 'No controls with test steps were found in this file.' : '' };
 }
 
 export default function RcmUpload({ onGenerate, onGoToDashboard, teamRequests = [] }) {
-  const [rows, setRows] = useState([]);
-  const [headers, setHeaders] = useState([]);
-  const [mapping, setMapping] = useState({ control: '', stepId: '', step: '', owner: '' });
   const [fileName, setFileName] = useState('');
-  const [selectedControls, setSelectedControls] = useState([]);
+  const [controls, setControls] = useState([]);
+  const [selectedKeys, setSelectedKeys] = useState([]);
   const [error, setError] = useState('');
   const [toast, setToast] = useState('');
   const [dragging, setDragging] = useState(false);
-  // The user's own generated to-do list (persisted). Each control -> steps with `done`.
   const [myList, setMyList] = useState([]);
-  // Which control folders are collapsed (by control name)
   const [collapsed, setCollapsed] = useState({});
 
-  // Load any previously generated checklist on mount
   useEffect(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) setMyList(JSON.parse(saved));
-    } catch { /* ignore corrupt storage */ }
+    } catch { /* ignore */ }
   }, []);
 
   const persist = (list) => {
@@ -51,11 +105,10 @@ export default function RcmUpload({ onGenerate, onGoToDashboard, teamRequests = 
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(list)); } catch { /* ignore */ }
   };
 
-  const parseFile = (file) => {
+  const readFile = (file) => {
     if (!file) return;
-    const name = file.name.toLowerCase();
-    if (!/\.(xlsx|xls|csv)$/.test(name)) {
-      setError('Unsupported file type. Please upload an .xlsx, .xls, or .csv file.');
+    if (!/\.(xlsx|xls|csv)$/i.test(file.name)) {
+      setError('Unsupported file type. Please upload an .xlsx, .xls, or .csv RCM file.');
       return;
     }
     setError('');
@@ -63,134 +116,91 @@ export default function RcmUpload({ onGenerate, onGoToDashboard, teamRequests = 
     const reader = new FileReader();
     reader.onload = (ev) => {
       try {
-        const wb = XLSX.read(ev.target.result, { type: 'array' });
-        const sheet = wb.Sheets[wb.SheetNames[0]];
-        const json = XLSX.utils.sheet_to_json(sheet, { defval: '' });
-        if (json.length === 0) { setError('That sheet looks empty.'); return; }
-        const hdrs = Object.keys(json[0]);
-        setHeaders(hdrs);
-        setRows(json);
-        setMapping({
-          control: guessColumn(hdrs, COLUMN_HINTS.control),
-          stepId: guessColumn(hdrs, COLUMN_HINTS.stepId),
-          step: guessColumn(hdrs, COLUMN_HINTS.step),
-          owner: guessColumn(hdrs, COLUMN_HINTS.owner),
-        });
-        setSelectedControls([]);
-      } catch (err) {
-        setError('Could not read that file. Make sure it is a valid .xlsx or .csv.');
+        const { controls: parsed, error: perr } = parseRcm(ev.target.result);
+        setControls(parsed);
+        setSelectedKeys([]);
+        if (perr) setError(perr);
+      } catch {
+        setError('Could not read that file. Make sure it is a valid RCM (.xlsx or .csv).');
       }
     };
     reader.readAsArrayBuffer(file);
   };
 
-  const handleFile = (e) => parseFile(e.target.files[0]);
-
+  const handleFile = (e) => readFile(e.target.files[0]);
   const handleDrop = (e) => {
     e.preventDefault();
     setDragging(false);
-    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      parseFile(e.dataTransfer.files[0]);
-    }
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) readFile(e.dataTransfer.files[0]);
   };
 
-  // Group rows into controls -> steps using the current mapping
-  const controls = React.useMemo(() => {
-    if (!mapping.control || !mapping.step) return [];
-    const map = {};
-    rows.forEach((r) => {
-      const control = String(r[mapping.control] || '').trim();
-      const step = String(r[mapping.step] || '').trim();
-      if (!control || !step) return;
-      if (!map[control]) map[control] = [];
-      map[control].push({
-        stepId: mapping.stepId ? String(r[mapping.stepId] || '').trim() : '',
-        step,
-        owner: mapping.owner ? String(r[mapping.owner] || '').trim() : '',
-      });
-    });
-    return Object.entries(map).map(([name, steps]) => ({ name, steps }));
-  }, [rows, mapping]);
+  const toggleControl = (key) =>
+    setSelectedKeys((prev) => (prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]));
 
-  const toggleControl = (name) => {
-    setSelectedControls((prev) => prev.includes(name) ? prev.filter((c) => c !== name) : [...prev, name]);
-  };
+  const toggleFolder = (key) => setCollapsed((prev) => ({ ...prev, [key]: !prev[key] }));
+
+  const controlLabel = (c) => (c.num ? `Control ${c.num} — ${c.name}` : c.name);
 
   const generate = () => {
-    const chosen = controls.filter((c) => selectedControls.includes(c.name));
+    const chosen = controls.filter((c) => selectedKeys.includes(c.key));
     const totalStepsChosen = chosen.reduce((n, c) => n + c.steps.length, 0);
-    if (totalStepsChosen === 0) { setToast('No test steps found for the selected controls.'); return; }
+    if (totalStepsChosen === 0) { setToast('Select at least one control with test steps.'); return; }
 
-    // Preserve any previously-ticked steps when regenerating
+    // Preserve already-ticked steps when regenerating
     const prevDone = {};
-    myList.forEach((c) => c.steps.forEach((s) => { prevDone[`${c.name}||${s.stepId}||${s.step}`] = s.done; }));
+    myList.forEach((c) => c.steps.forEach((s) => { prevDone[`${c.name}||${s.id}`] = s.done; }));
 
-    // Build the user's own checkbox to-do list (grouped by control)
     const checklist = chosen.map((c) => ({
-      name: c.name,
-      steps: c.steps.map((s) => ({
-        stepId: s.stepId,
-        step: s.step,
-        owner: s.owner,
-        done: prevDone[`${c.name}||${s.stepId}||${s.step}`] || false,
-      })),
+      name: controlLabel(c),
+      assigned: c.assigned,
+      steps: c.steps.map((s) => ({ id: s.id, step: s.text, done: prevDone[`${controlLabel(c)}||${s.id}`] || false })),
     }));
     persist(checklist);
 
-    // Also feed the shared team dashboard (unchanged behaviour)
+    // Feed the shared dashboard as well
     const todos = [];
     chosen.forEach((c) => {
       c.steps.forEach((s) => {
         todos.push({
-          title: s.stepId ? `${s.stepId} — ${s.step}` : s.step,
+          title: `${s.id} — ${s.text}`,
           status: 'todo',
           priority: 'medium',
           requester: fileName || 'RCM',
-          assignee: s.owner || 'Unassigned',
-          assigned_to: s.owner || '',
-          control: c.name,
-          risk_tag: c.name,
-          description: `Test step from control "${c.name}" (RCM: ${fileName}).${s.owner ? ` Assigned to ${s.owner}.` : ''}`,
+          assignee: c.assigned || 'Unassigned',
+          assigned_to: c.assigned || '',
+          control: controlLabel(c),
+          risk_tag: controlLabel(c),
+          description: `Test step ${s.id} from ${controlLabel(c)} (RCM: ${fileName}).${c.assigned ? ` Assigned: ${c.assigned}.` : ''}`,
         });
       });
     });
     onGenerate?.(todos);
-    setToast(`Built your to-do list: ${totalStepsChosen} step${totalStepsChosen === 1 ? '' : 's'} across ${chosen.length} control${chosen.length === 1 ? '' : 's'}.`);
+    setToast(`Built your to-do list: ${totalStepsChosen} test steps across ${chosen.length} control${chosen.length === 1 ? '' : 's'}.`);
   };
 
-  const toggleStep = (controlName, stepId, stepText) => {
+  const toggleStep = (controlName, stepId) => {
     persist(myList.map((c) => {
       if (c.name !== controlName) return c;
-      return { ...c, steps: c.steps.map((s) => (s.stepId === stepId && s.step === stepText) ? { ...s, done: !s.done } : s) };
+      return { ...c, steps: c.steps.map((s) => (s.id === stepId ? { ...s, done: !s.done } : s)) };
     }));
   };
 
-  const clearList = () => {
-    persist([]);
-    setToast('');
-  };
+  const clearList = () => { persist([]); setToast(''); };
 
-  const toggleFolder = (name) => setCollapsed((prev) => ({ ...prev, [name]: !prev[name] }));
-
-  const totalSteps = controls.filter((c) => selectedControls.includes(c.name)).reduce((n, c) => n + c.steps.length, 0);
-
-  // Personal completion — from the user's own generated checklist
   const listDoneCount = myList.reduce((n, c) => n + c.steps.filter((s) => s.done).length, 0);
   const listTotal = myList.reduce((n, c) => n + c.steps.length, 0);
   const personalPct = listTotal > 0 ? Math.round((listDoneCount / listTotal) * 100) : 0;
-
-  // Team completion — from the shared tracker (all requests marked done)
   const teamDone = teamRequests.filter((r) => r.status === 'done').length;
   const teamTotal = teamRequests.length;
   const teamPct = teamTotal > 0 ? Math.round((teamDone / teamTotal) * 100) : 0;
-
   const pctColor = (p) => (p === 100 ? '#037f0c' : p > 0 ? '#ec7211' : '#9ca3af');
+  const selectedStepCount = controls.filter((c) => selectedKeys.includes(c.key)).reduce((n, c) => n + c.steps.length, 0);
 
   return (
     <div className="rcm-upload">
       <div className="rcm-header">
         <h3>📤 Upload RCM → Generate Your To-Do List</h3>
-        <p className="muted">Upload your Risk Control Matrix, pick the controls assigned to you, and get a checklist built from the test steps.</p>
+        <p className="muted">Upload your Risk Control Matrix. We read each control's "How to Test" steps, then you pick your assigned controls to build a checklist.</p>
       </div>
 
       <label
@@ -206,48 +216,25 @@ export default function RcmUpload({ onGenerate, onGoToDashboard, teamRequests = 
 
       {error && <div className="error">{error}</div>}
 
-      {headers.length > 0 && (
-        <div className="rcm-mapping">
-          <h4>Column mapping</h4>
-          <p className="muted">We auto-detected these. Adjust if anything's off.</p>
-          <div className="rcm-map-grid">
-            {[
-              { key: 'control', label: 'Control' },
-              { key: 'stepId', label: 'Test Step ID' },
-              { key: 'step', label: 'Test Step / Description' },
-              { key: 'owner', label: 'Assigned To' },
-            ].map((f) => (
-              <div key={f.key} className="rcm-map-field">
-                <label>{f.label}{(f.key === 'control' || f.key === 'step') && <span className="req">*</span>}</label>
-                <select value={mapping[f.key]} onChange={(e) => setMapping({ ...mapping, [f.key]: e.target.value })}>
-                  <option value="">— none —</option>
-                  {headers.map((h) => <option key={h} value={h}>{h}</option>)}
-                </select>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
       {controls.length > 0 && (
         <div className="rcm-controls">
           <h4>Select your assigned control(s)</h4>
           <div className="rcm-control-list">
             {controls.map((c) => {
-              const isSelected = selectedControls.includes(c.name);
+              const isSelected = selectedKeys.includes(c.key);
               return (
-                <div key={c.name} className={`rcm-control-block ${isSelected ? 'rcm-control-selected' : ''}`}>
+                <div key={c.key} className={`rcm-control-block ${isSelected ? 'rcm-control-selected' : ''}`}>
                   <label className="rcm-control-item">
-                    <input type="checkbox" checked={isSelected} onChange={() => toggleControl(c.name)} />
-                    <span className="rcm-control-name">{c.name}</span>
-                    <span className="rcm-control-count">{c.steps.length} test steps</span>
+                    <input type="checkbox" checked={isSelected} onChange={() => toggleControl(c.key)} />
+                    <span className="rcm-control-name">{controlLabel(c)}</span>
+                    <span className="rcm-control-count">{c.steps.length} test steps{c.assigned ? ` · ${c.assigned}` : ''}</span>
                   </label>
                   {isSelected && (
                     <ul className="rcm-control-steps">
-                      {c.steps.map((s, i) => (
-                        <li key={`${s.stepId}-${i}`} className="rcm-control-step">
-                          {s.stepId && <span className="rcm-step-id">{s.stepId}</span>}
-                          <span className="rcm-step-text">{s.step}</span>
+                      {c.steps.map((s) => (
+                        <li key={s.id} className="rcm-control-step">
+                          <span className="rcm-step-id">{s.id}</span>
+                          <span className="rcm-step-text">{s.text}</span>
                         </li>
                       ))}
                     </ul>
@@ -258,8 +245,8 @@ export default function RcmUpload({ onGenerate, onGoToDashboard, teamRequests = 
           </div>
 
           <div className="rcm-generate-bar">
-            <button className="btn btn-primary" onClick={generate} disabled={selectedControls.length === 0}>
-              ⚡ Generate my to-do list{totalSteps > 0 ? ` (${totalSteps} steps)` : ''}
+            <button className="btn btn-primary" onClick={generate} disabled={selectedKeys.length === 0}>
+              ⚡ Generate my to-do list{selectedStepCount > 0 ? ` (${selectedStepCount} steps)` : ''}
             </button>
           </div>
         </div>
@@ -274,7 +261,6 @@ export default function RcmUpload({ onGenerate, onGoToDashboard, teamRequests = 
 
       {myList.length > 0 && (
         <div className="rcm-mylist">
-          {/* Overall completion — personal + team */}
           <div className="rcm-overall">
             <div className="rcm-overall-card">
               <div className="rcm-overall-top">
@@ -303,7 +289,6 @@ export default function RcmUpload({ onGenerate, onGoToDashboard, teamRequests = 
               </div>
             </div>
 
-            {/* One collapsible folder per control */}
             <div className="rcm-folders">
               {myList.map((c) => {
                 const doneCount = c.steps.filter((s) => s.done).length;
@@ -321,11 +306,11 @@ export default function RcmUpload({ onGenerate, onGoToDashboard, teamRequests = 
                     <div className="checklist-bar rcm-folder-bar"><div className="checklist-bar-fill" style={{ width: `${pct}%` }} /></div>
                     {!isCollapsed && (
                       <div className="checklist-steps rcm-folder-steps">
-                        {c.steps.map((s, i) => (
-                          <label key={`${s.stepId}-${i}`} className={`checklist-step ${s.done ? 'checklist-step-done' : ''}`}>
-                            <input type="checkbox" checked={s.done} onChange={() => toggleStep(c.name, s.stepId, s.step)} />
-                            {s.stepId && <span className="checklist-step-id">{s.stepId}</span>}
-                            <span className="checklist-step-label">{s.step}{s.owner ? ` — ${s.owner}` : ''}</span>
+                        {c.steps.map((s) => (
+                          <label key={s.id} className={`checklist-step ${s.done ? 'checklist-step-done' : ''}`}>
+                            <input type="checkbox" checked={s.done} onChange={() => toggleStep(c.name, s.id)} />
+                            <span className="checklist-step-id">{s.id}</span>
+                            <span className="checklist-step-label">{s.step}</span>
                           </label>
                         ))}
                       </div>
