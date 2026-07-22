@@ -144,7 +144,7 @@ export default function App() {
           </div>
         )}
         {view === 'create' && <RequestForm onSuccess={handleBack} currentUser={user.username} />}
-        {view === 'detail' && <RequestDetail id={selectedId} onBack={handleBack} />}
+        {view === 'detail' && <RequestDetail id={selectedId} request={allRequests.find(r => r.id === selectedId)} onBack={handleBack} />}
         {view === 'person' && <PersonProfile person={selectedPerson} requests={allRequests} onBack={handleBack} onViewDetail={handleViewDetail} />}
       </main>
     </div>

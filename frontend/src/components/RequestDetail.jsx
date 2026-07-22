@@ -8,33 +8,38 @@ const STATUSES = [
   { value: 'done', label: '🟢 Done' },
 ];
 
-export default function RequestDetail({ id, onBack }) {
-  const [request, setRequest] = useState(null);
+export default function RequestDetail({ id, request: initialRequest, onBack }) {
+  const [request, setRequest] = useState(initialRequest || null);
   const [newComment, setNewComment] = useState('');
   const [commentAuthor, setCommentAuthor] = useState('');
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef(null);
 
   const loadRequest = async () => {
-    const data = await fetchRequest(id);
-    setRequest(data);
+    try {
+      const data = await fetchRequest(id);
+      if (data && data.id) setRequest(data);
+    } catch { /* no backend — keep in-memory request */ }
   };
 
   useEffect(() => {
-    loadRequest();
+    if (initialRequest) setRequest(initialRequest);
+    else loadRequest();
   }, [id]);
 
   const handleStatusChange = async (e) => {
-    await updateRequest(id, { status: e.target.value });
-    loadRequest();
+    const status = e.target.value;
+    setRequest((prev) => ({ ...prev, status })); // optimistic
+    try { await updateRequest(id, { status }); } catch { /* best effort */ }
   };
 
   const handleAddComment = async (e) => {
     e.preventDefault();
     if (!newComment.trim() || !commentAuthor.trim()) return;
-    await addComment(id, { author: commentAuthor, content: newComment });
+    const comment = { id: Date.now(), author: commentAuthor, content: newComment, created_at: new Date().toISOString() };
+    setRequest((prev) => ({ ...prev, comments: [...(prev.comments || []), comment] })); // optimistic
     setNewComment('');
-    loadRequest();
+    try { await addComment(id, { author: commentAuthor, content: newComment }); } catch { /* best effort */ }
   };
 
   const handleFileUpload = async (e) => {

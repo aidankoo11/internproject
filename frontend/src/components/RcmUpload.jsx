@@ -44,6 +44,22 @@ function parseSteps(raw) {
     .map((p) => ({ id: `${p.num}${p.letter}`, text: p.text.trim() }));
 }
 
+// Build a short one-liner headline from a full test-step sentence
+function headline(text) {
+  let t = String(text || '').trim();
+  // cut at the first strong delimiter (dash, colon, semicolon)
+  const delims = [' — ', ' – ', ' -- ', '—', '–', ': ', '; '];
+  let cut = t.length;
+  for (const d of delims) { const i = t.indexOf(d); if (i > 3 && i < cut) cut = i; }
+  t = t.slice(0, cut).trim();
+  // cut at first sentence period or opening parenthesis
+  const p = t.search(/\.\s/); if (p > 3) t = t.slice(0, p).trim();
+  const paren = t.indexOf(' ('); if (paren > 3) t = t.slice(0, paren).trim();
+  // hard cap length on a word boundary
+  if (t.length > 60) t = t.slice(0, 58).replace(/\s+\S*$/, '').trim() + '…';
+  return t || String(text).trim().slice(0, 58);
+}
+
 // Parse an RCM workbook into controls -> test steps
 function parseRcm(arrayBuffer) {
   const wb = XLSX.read(arrayBuffer, { type: 'array' });
@@ -162,7 +178,7 @@ export default function RcmUpload({ onGenerate, onGoToDashboard, teamRequests = 
     chosen.forEach((c) => {
       c.steps.forEach((s) => {
         todos.push({
-          title: `${s.id} — ${s.text}`,
+          title: `${s.id} — ${headline(s.text)}`,
           status: 'todo',
           priority: 'medium',
           requester: fileName || 'RCM',
@@ -170,7 +186,8 @@ export default function RcmUpload({ onGenerate, onGoToDashboard, teamRequests = 
           assigned_to: c.assigned || '',
           control: controlLabel(c),
           risk_tag: controlLabel(c),
-          description: `Test step ${s.id} from ${controlLabel(c)} (RCM: ${fileName}).${c.assigned ? ` Assigned: ${c.assigned}.` : ''}`,
+          // Full RCM sentence shown when the user opens the box
+          description: `${s.text}\n\n— Test step ${s.id} · ${controlLabel(c)}${c.assigned ? ` · Assigned: ${c.assigned}` : ''} · RCM: ${fileName}`,
         });
       });
     });
