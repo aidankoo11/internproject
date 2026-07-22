@@ -88,7 +88,9 @@ export default function Dashboard({ requests, statusFilter, onStatusFilterChange
       ) : (
         <div className="dash-folders">
           {groupNames.map((name) => {
-            const items = groups[name];
+            const rawItems = groups[name];
+            // Keep not-done steps on top; completed ones sink to the bottom
+            const items = [...rawItems].sort((a, b) => (a.status === 'done' ? 1 : 0) - (b.status === 'done' ? 1 : 0));
             const doneCount = items.filter((r) => r.status === 'done').length;
             const pct = Math.round((doneCount / items.length) * 100);
             const isCollapsed = !!collapsed[name];
