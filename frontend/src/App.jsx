@@ -72,6 +72,13 @@ export default function App() {
   const handleViewPerson = (name) => { setSelectedPerson(name); setView('person'); };
   const handleBack = () => { setView('dashboard'); setSelectedId(null); setSelectedPerson(null); loadRequests(); };
 
+  // Update a request's status in-memory (works without a backend); best-effort API save
+  const handleStatusChange = (id, status) => {
+    setAllRequests((prev) => prev.map((r) => (r.id === id ? { ...r, status } : r)));
+    setRequests((prev) => prev.map((r) => (r.id === id ? { ...r, status } : r)));
+    try { updateRequest(id, { status }); } catch { /* best effort */ }
+  };
+
   // Add generated RCM test-step requests into the tracker.
   // De-dupes by control + title so re-uploading / regenerating the same RCM
   // doesn't create duplicate boxes (existing ones keep their status).
@@ -128,7 +135,7 @@ export default function App() {
           <div className="dashboard-layout">
             <div className="dashboard-main">
               <MyTasks requests={allRequests} currentUser={user.username} />
-              <Dashboard requests={requests} statusFilter={statusFilter} onStatusFilterChange={setStatusFilter} onViewDetail={handleViewDetail} onRefresh={loadRequests} />
+              <Dashboard requests={requests} statusFilter={statusFilter} onStatusFilterChange={setStatusFilter} onViewDetail={handleViewDetail} onRefresh={loadRequests} onStatusChange={handleStatusChange} />
             </div>
             <div className="dashboard-sidebar">
               <ActivityFeed />

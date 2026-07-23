@@ -8,7 +8,7 @@ const STATUS_CONFIG = {
   done: { label: 'Done', color: '#1d8102', bg: '#f2f8f0', emoji: '🟢', cssClass: 'done' },
 };
 
-export default function Dashboard({ requests, statusFilter, onStatusFilterChange, onViewDetail, onRefresh }) {
+export default function Dashboard({ requests, statusFilter, onStatusFilterChange, onViewDetail, onRefresh, onStatusChange }) {
   const [collapsed, setCollapsed] = useState({});
   const toggleFolder = (name) => setCollapsed((prev) => ({ ...prev, [name]: !prev[name] }));
 
@@ -37,10 +37,10 @@ export default function Dashboard({ requests, statusFilter, onStatusFilterChange
   const inProgressPercent = total > 0 ? Math.round((counts.in_progress / total) * 100) : 0;
   const urgentPercent = total > 0 ? Math.round((counts.urgent / total) * 100) : 0;
 
-  const handleQuickStatus = async (e, id, newStatus) => {
+  const handleQuickStatus = (e, id, newStatus) => {
     e.stopPropagation();
-    await updateRequest(id, { status: newStatus });
-    onRefresh();
+    if (onStatusChange) onStatusChange(id, newStatus);
+    else { updateRequest(id, { status: newStatus }); onRefresh && onRefresh(); }
   };
 
   return (
