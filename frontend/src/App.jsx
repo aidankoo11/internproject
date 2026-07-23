@@ -72,10 +72,16 @@ export default function App() {
   const handleViewPerson = (name) => { setSelectedPerson(name); setView('person'); };
   const handleBack = () => { setView('dashboard'); setSelectedId(null); setSelectedPerson(null); loadRequests(); };
 
-  // Add auto-generated data requests (from Risk Digest) into the tracker
+  // Add generated RCM test-step requests into the tracker.
+  // De-dupes by control + title so re-uploading / regenerating the same RCM
+  // doesn't create duplicate boxes (existing ones keep their status).
   const handleGenerateRequests = (newRequests) => {
+    const keyOf = (r) => `${r.control || r.risk_tag || ''}||${r.title}`;
+    const existingKeys = new Set(allRequests.map(keyOf));
+    const unique = newRequests.filter((r) => !existingKeys.has(keyOf(r)));
+    if (unique.length === 0) { return []; }
     const maxId = allRequests.reduce((m, r) => Math.max(m, r.id), 0);
-    const stamped = newRequests.map((r, i) => ({
+    const stamped = unique.map((r, i) => ({
       ...r,
       id: maxId + i + 1,
       created_by: user.username,
