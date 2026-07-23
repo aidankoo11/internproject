@@ -93,7 +93,8 @@ export default function Dashboard({ requests, statusFilter, onStatusFilterChange
             const items = [...rawItems].sort((a, b) => (a.status === 'done' ? 1 : 0) - (b.status === 'done' ? 1 : 0));
             const doneCount = items.filter((r) => r.status === 'done').length;
             const pct = Math.round((doneCount / items.length) * 100);
-            const isCollapsed = !!collapsed[name];
+            // "Other Requests" starts collapsed by default; others start expanded
+            const isCollapsed = name in collapsed ? collapsed[name] : name === OTHER;
             const pctColor = pct === 100 ? '#037f0c' : pct > 0 ? '#ec7211' : '#9ca3af';
             return (
               <div key={name} className="dash-folder">
@@ -119,12 +120,6 @@ export default function Dashboard({ requests, statusFilter, onStatusFilterChange
                           </div>
                           <h3 className="box-title">{req.title}</h3>
                           <div className="box-details">
-                            {req.requester && (
-                              <div className="box-detail-row">
-                                <span className="box-label">Requester</span>
-                                <span className="box-value">{req.requester}</span>
-                              </div>
-                            )}
                             {req.assignee && (
                               <div className="box-detail-row">
                                 <span className="box-label">Assignee</span>
