@@ -21,8 +21,9 @@ function parseSteps(raw) {
   let curNum = null;
   let lastIdx = -1;
   for (const line of lines) {
-    const top = line.match(/^(\d+)\.\s*(.*)$/);
-    const sub = line.match(/^([a-zA-Z])\)\s*(.*)$/);
+    // Top-level: "1." or "1)"  |  Sub-step: "a)" or "a." or "(a)"
+    const top = line.match(/^(\d+)[.)]\s+(.*)$/);
+    const sub = line.match(/^\(?([a-zA-Z])[.)]\s+(.*)$/);
     if (top) {
       curNum = top[1];
       parsed.push({ num: curNum, letter: '', text: top[2], hasSub: false });
@@ -66,16 +67,17 @@ function parseRcm(arrayBuffer) {
   const sheetName = wb.SheetNames.includes('RCM') ? 'RCM' : wb.SheetNames[0];
   const rows = XLSX.utils.sheet_to_json(wb.Sheets[sheetName], { header: 1, defval: '' });
 
-  // Locate the label row (the one that contains "how to test")
-  let labelRowIdx = rows.findIndex((r) => r.some((c) => String(c).trim().toLowerCase() === 'how to test'));
-  if (labelRowIdx === -1) return { controls: [], error: 'Could not find a "How to Test" column. Is this an RCM export?' };
+  // Locate the label row — the one that has a "how to test" (or "test procedure/steps") column
+  const isHowToLabel = (v) => v.includes('how to test') || v.includes('test procedure') || v.includes('test step') || v.includes('testing procedure');
+  let labelRowIdx = rows.findIndex((r) => r.some((c) => isHowToLabel(String(c).trim().toLowerCase())));
+  if (labelRowIdx === -1) return { controls: [], error: 'Could not find a "How to Test" / test procedures column. Is this an RCM export?' };
 
   const labelRow = rows[labelRowIdx];
-  const howToCol = findCol(labelRow, (v) => v === 'how to test' || v.includes('how to test'));
-  const numCol = findCol(labelRow, (v) => v === 'control #' || v.includes('control #') || v === 'control#');
-  const nameCol = findCol(labelRow, (v) => v === 'sub-process');
-  const procCol = findCol(labelRow, (v) => v.includes('process description'));
-  const assignedCol = findCol(labelRow, (v) => v.includes('assigned'));
+  const howToCol = findCol(labelRow, isHowToLabel);
+  const numCol = findCol(labelRow, (v) => v.includes('control #') || v === 'control#' || v === 'control no' || v === 'control number');
+  const nameCol = findCol(labelRow, (v) => v === 'sub-process' || v.includes('sub-process') || v === 'control name' || v.includes('control title'));
+  const procCol = findCol(labelRow, (v) => v.includes('process description') || v === 'process');
+  const assignedCol = findCol(labelRow, (v) => v.includes('assigned') || v.includes('auditor') || v.includes('owner') || v.includes('preparer'));
 
   const controls = [];
   for (let i = labelRowIdx + 1; i < rows.length; i++) {
