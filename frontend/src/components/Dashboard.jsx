@@ -12,27 +12,25 @@ export default function Dashboard({ requests, statusFilter, onStatusFilterChange
   const [collapsed, setCollapsed] = useState({});
   const toggleFolder = (name) => setCollapsed((prev) => ({ ...prev, [name]: !prev[name] }));
 
-  // Group requests into control folders (falls back to "Other Requests")
-  const OTHER = 'Other Requests';
+  // Group requests into control folders. Only show items tied to a control
+  // (RCM-generated) — ungrouped/other requests are not shown.
   const groups = {};
   requests.forEach((r) => {
-    const key = r.control || r.risk_tag || OTHER;
+    const key = r.control || r.risk_tag;
+    if (!key) return; // skip ungrouped ("Other") requests
     if (!groups[key]) groups[key] = [];
     groups[key].push(r);
   });
-  // Keep "Other Requests" last, everything else alphabetical
-  const groupNames = Object.keys(groups).sort((a, b) => {
-    if (a === OTHER) return 1;
-    if (b === OTHER) return -1;
-    return a.localeCompare(b);
-  });
+  const groupNames = Object.keys(groups).sort((a, b) => a.localeCompare(b));
 
-  const total = requests.length;
+  // Counts reflect only the shown (grouped) items
+  const shownRequests = Object.values(groups).flat();
+  const total = shownRequests.length;
   const counts = {
-    urgent: requests.filter(r => r.status === 'urgent').length,
-    in_progress: requests.filter(r => r.status === 'in_progress').length,
-    todo: requests.filter(r => r.status === 'todo').length,
-    done: requests.filter(r => r.status === 'done').length,
+    urgent: shownRequests.filter(r => r.status === 'urgent').length,
+    in_progress: shownRequests.filter(r => r.status === 'in_progress').length,
+    todo: shownRequests.filter(r => r.status === 'todo').length,
+    done: shownRequests.filter(r => r.status === 'done').length,
   };
 
   const donePercent = total > 0 ? Math.round((counts.done / total) * 100) : 0;
@@ -93,8 +91,7 @@ export default function Dashboard({ requests, statusFilter, onStatusFilterChange
             const items = [...rawItems].sort((a, b) => (a.status === 'done' ? 1 : 0) - (b.status === 'done' ? 1 : 0));
             const doneCount = items.filter((r) => r.status === 'done').length;
             const pct = Math.round((doneCount / items.length) * 100);
-            // "Other Requests" starts collapsed by default; others start expanded
-            const isCollapsed = name in collapsed ? collapsed[name] : name === OTHER;
+            const isCollapsed = !!collapsed[name];
             const pctColor = pct === 100 ? '#037f0c' : pct > 0 ? '#ec7211' : '#9ca3af';
             return (
               <div key={name} className="dash-folder">
