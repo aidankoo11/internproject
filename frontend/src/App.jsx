@@ -15,8 +15,9 @@ import ActivityFeed from './components/ActivityFeed';
 import RcmUpload from './components/RcmUpload';
 
 export default function App() {
-  const [user, setUser] = useState(() => { const s = localStorage.getItem('tracker_session'); return s ? JSON.parse(s).user : null; });
-  const [team, setTeam] = useState(() => { const s = localStorage.getItem('tracker_session'); return s ? JSON.parse(s).team : null; });
+  // Login temporarily bypassed — default to a demo session so the app opens straight to the dashboard
+  const [user, setUser] = useState(() => { const s = localStorage.getItem('tracker_session'); return s ? JSON.parse(s).user : { username: 'demo', displayName: 'Demo User', avatarUrl: 'x' }; });
+  const [team, setTeam] = useState(() => { const s = localStorage.getItem('tracker_session'); return s ? JSON.parse(s).team : { name: 'Demo Team', code: 'DEMO' }; });
   const [needsAvatar, setNeedsAvatar] = useState(false);
   const sampleRequests = [
     { id: 1, title: 'FQA Report – Full Population Extract', status: 'in_progress', priority: 'high', assigned_to: 'nancy', assignee: 'Nancy Chen', created_by: 'nancy', created_at: '2025-06-01', description: 'Need complete FQA audit report dataset from 2023-2025 for all HPB/SPB suppliers.', comments: [], files: [] },
